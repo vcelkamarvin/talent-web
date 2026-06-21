@@ -1,0 +1,279 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #FBFBFD;
+  --surface: #FFFFFF;
+  --ink: #0C0E16;
+  --ink-2: #3A3E4D;
+  --ink-3: #8A8F9E;
+  --line: #EBECF1;
+  --line-2: #E0E2EA;
+
+  /* 7 talent dimensions */
+  --d1: #2563EB;
+  --d2: #7C3AED;
+  --d3: #F97316;
+  --d4: #EC4899;
+  --d5: #F59E0B;
+  --d6: #10B981;
+  --d7: #EF4444;
+
+  --radius: 18px;
+  --radius-lg: 24px;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-d1: var(--d1);
+  --color-d2: var(--d2);
+  --color-d3: var(--d3);
+  --color-d4: var(--d4);
+  --color-d5: var(--d5);
+  --color-d6: var(--d6);
+  --color-d7: var(--d7);
+  --radius-app: var(--radius);
+  --radius-app-lg: var(--radius-lg);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: #EDEEF2;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+/* Apple-clean soft mesh background */
+.mesh-bg {
+  background:
+    radial-gradient(120% 90% at 18% 8%, #DCE6FF 0%, rgba(220,230,255,0) 46%),
+    radial-gradient(110% 80% at 92% 4%, #FFE2D6 0%, rgba(255,226,214,0) 42%),
+    radial-gradient(130% 100% at 82% 96%, #E9DEFF 0%, rgba(233,222,255,0) 50%),
+    radial-gradient(120% 90% at 10% 100%, #D8F5EA 0%, rgba(216,245,234,0) 46%),
+    var(--bg);
+}
+
+/* Spectrum ribbon */
+.spectrum-bar {
+  height: 4px;
+  border-radius: 99px;
+  background: linear-gradient(
+    90deg,
+    var(--d1) 0 14.28%, var(--d2) 14.28% 28.57%,
+    var(--d3) 28.57% 42.85%, var(--d4) 42.85% 57.14%,
+    var(--d5) 57.14% 71.42%, var(--d6) 71.42% 85.71%,
+    var(--d7) 85.71% 100%
+  );
+}
+
+/* ─── Game feedback ─── */
+@keyframes pulse-green {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+  70%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+@keyframes shake-red {
+  0%, 100% { transform: translateX(0); }
+  20%  { transform: translateX(-6px); }
+  40%  { transform: translateX(6px); }
+  60%  { transform: translateX(-4px); }
+  80%  { transform: translateX(4px); }
+}
+.pulse-green { animation: pulse-green 0.6s ease-out; }
+.shake-red   { animation: shake-red 0.4s ease-out; }
+
+/* ─── Orb animations ─── */
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-14px); }
+}
+
+@keyframes orb-glow-pulse {
+  0%, 100% {
+    box-shadow:
+      0 28px 56px -16px rgba(98,86,220,0.42),
+      inset 0 -10px 26px rgba(60,40,140,0.32),
+      inset 0 8px 18px rgba(255,255,255,0.5);
+  }
+  50% {
+    box-shadow:
+      0 38px 72px -12px rgba(98,86,220,0.68),
+      inset 0 -12px 30px rgba(60,40,140,0.42),
+      inset 0 10px 22px rgba(255,255,255,0.6);
+  }
+}
+
+@keyframes sat-pulse {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%       { transform: scale(1.35); opacity: 0.8; }
+}
+
+/* Applied by the Orb component */
+.orb-sphere {
+  animation: orb-glow-pulse 4s ease-in-out infinite;
+}
+
+/* Entrance: fade + scale up from slightly below */
+@keyframes orb-enter {
+  0%   { opacity: 0; transform: translateY(22px) scale(0.88); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.orb-enter {
+  animation: orb-enter 0.9s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+/* ─── iPhone frame (desktop showcase) ─── */
+.iphone-outer {
+  position: relative;
+}
+
+/* Desktop only — these are toggled by the layout media query */
+.iphone-chrome { display: none; }
+
+/* Mobile: ensure iphone-outer and phone-shell fill the screen */
+.iphone-outer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.phone-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100dvh;
+}
+
+@media (min-width: 640px) {
+  /* Reset mobile flex stretch so the phone has a fixed size */
+  .iphone-outer {
+    flex: none;
+    width: 393px;
+    flex-shrink: 0;
+    background: #1C1C1E;
+    border-radius: 54px;
+    padding: 14px;
+    box-shadow:
+      0 0 0 1.5px #3C3C3E,
+      inset 0 0 0 1px rgba(255,255,255,0.07),
+      0 60px 120px -40px rgba(10,10,30,0.65),
+      0 20px 40px -20px rgba(10,10,30,0.3);
+  }
+
+  /* Volume buttons left */
+  .iphone-outer::before {
+    content: '';
+    position: absolute;
+    left: -3.5px;
+    top: 108px;
+    width: 3.5px;
+    height: 30px;
+    background: #3C3C3E;
+    border-radius: 2px 0 0 2px;
+    box-shadow: 0 46px 0 0 #3C3C3E, 0 88px 0 0 #3C3C3E;
+  }
+  /* Power button right */
+  .iphone-outer::after {
+    content: '';
+    position: absolute;
+    right: -3.5px;
+    top: 136px;
+    width: 3.5px;
+    height: 68px;
+    background: #3C3C3E;
+    border-radius: 0 2px 2px 0;
+  }
+
+  .iphone-chrome {
+    display: block;
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .iphone-chrome-top {
+    top: 14px;
+    height: 52px;
+  }
+  .iphone-chrome-bottom {
+    bottom: 14px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Notch */
+  .iphone-notch {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 34px;
+    background: #1C1C1E;
+    border-radius: 0 0 22px 22px;
+  }
+
+  /* Status bar */
+  .iphone-status {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    font-family: var(--font-display, 'Space Grotesk', system-ui, sans-serif);
+  }
+
+  /* Home indicator */
+  .iphone-home-bar {
+    width: 120px;
+    height: 5px;
+    background: rgba(12,14,22,0.25);
+    border-radius: 99px;
+    margin: 0 auto;
+  }
+
+  /* Scrollable screen area — override mobile flex */
+  .phone-shell {
+    flex: none;
+    width: 365px;      /* 393px - 14px padding × 2 */
+    min-height: 0;
+    height: 762px;
+    border-radius: 40px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+  }
+  .phone-shell::-webkit-scrollbar { display: none; }
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .pulse-green, .shake-red,
+  .orb-sphere, .orb-enter { animation: none; }
+}
