@@ -1,4 +1,4 @@
-import type { GameConfig, SequenceSet, RotationSet, AgeBand } from './types';
+import type { GameConfig, SequenceSet, RotationSet, HledaniSet, AgeBand } from './types';
 
 export const GAME_CYCLE: GameConfig[] = [
   { id: 'hledani',     title: 'Hledání',     dimension: 'd5', label: 'Vizuální' },
@@ -147,4 +147,56 @@ export const ROTATION_BY_AGE: Record<AgeBand, RotationSet> = {
 /** Returns the rotation set for an age band (defaults to 11–15 if unset). */
 export function getRotationSet(ageBand: AgeBand | null): RotationSet {
   return ROTATION_BY_AGE[ageBand ?? '11-15'];
+}
+
+/* ─── Third game (Hledání): age-adaptive visual search (odd-one-out) ───
+   Cíl: ťukni na pole, které se liší od ostatních.
+   Dvě páčky obtížnosti: velikost mřížky + nápadnost rozdílu.
+   4–6   → barva (vše červené, jedno modré), malá mřížka
+   7–10  → otočení šipky, střední mřížka
+   11–15 → jemný odstín, větší mřížka
+   15+   → velmi jemný odstín, hustá mřížka                          */
+
+export const HLEDANI_BY_AGE: Record<AgeBand, HledaniSet> = {
+  '4-6': {
+    mode: 'color',
+    rule: 'Najdi jinou barvu',
+    items: [
+      { cols: 2, rows: 2, oddIndex: 2, base: { color: '#EF4444', rot: 0 }, odd: { color: '#2563EB', rot: 0 } },
+      { cols: 3, rows: 2, oddIndex: 4, base: { color: '#10B981', rot: 0 }, odd: { color: '#F59E0B', rot: 0 } },
+      { cols: 3, rows: 3, oddIndex: 6, base: { color: '#7C3AED', rot: 0 }, odd: { color: '#F97316', rot: 0 } },
+    ],
+  },
+  '7-10': {
+    mode: 'rotation',
+    rule: 'Najdi otočenou šipku',
+    items: [
+      { cols: 3, rows: 3, oddIndex: 5,  base: { color: '#2563EB', rot: 0 }, odd: { color: '#2563EB', rot: 90 } },
+      { cols: 4, rows: 3, oddIndex: 7,  base: { color: '#F97316', rot: 0 }, odd: { color: '#F97316', rot: 180 } },
+      { cols: 4, rows: 4, oddIndex: 10, base: { color: '#10B981', rot: 0 }, odd: { color: '#10B981', rot: 90 } },
+    ],
+  },
+  '11-15': {
+    mode: 'color',
+    rule: 'Najdi jiný odstín',
+    items: [
+      { cols: 4, rows: 4, oddIndex: 9,  base: { color: '#2563EB', rot: 0 }, odd: { color: '#5A86E8', rot: 0 } },
+      { cols: 5, rows: 4, oddIndex: 13, base: { color: '#7C3AED', rot: 0 }, odd: { color: '#9460EF', rot: 0 } },
+      { cols: 5, rows: 5, oddIndex: 18, base: { color: '#F97316', rot: 0 }, odd: { color: '#FB9445', rot: 0 } },
+    ],
+  },
+  '15+': {
+    mode: 'color',
+    rule: 'Najdi nepatrně jiný odstín',
+    items: [
+      { cols: 5, rows: 5, oddIndex: 12, base: { color: '#10B981', rot: 0 }, odd: { color: '#1FC295', rot: 0 } },
+      { cols: 6, rows: 5, oddIndex: 21, base: { color: '#2563EB', rot: 0 }, odd: { color: '#3370EE', rot: 0 } },
+      { cols: 6, rows: 6, oddIndex: 29, base: { color: '#EF4444', rot: 0 }, odd: { color: '#F25555', rot: 0 } },
+    ],
+  },
+};
+
+/** Returns the visual-search set for an age band (defaults to 11–15 if unset). */
+export function getHledaniSet(ageBand: AgeBand | null): HledaniSet {
+  return HLEDANI_BY_AGE[ageBand ?? '11-15'];
 }

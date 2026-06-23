@@ -17,6 +17,13 @@ const AGE_ROWS_ROTACE: { band: string; sub: string; game: string; emoji: string 
   { band: '15+ let',   sub: 'Teenageři a dospělí',  game: 'Nestandardní úhly (30/120/…)', emoji: '🔥' },
 ];
 
+const AGE_ROWS_HLEDANI: { band: string; sub: string; game: string; emoji: string }[] = [
+  { band: '4–6 let',   sub: 'Předškoláci',          game: 'Malá mřížka · jiná barva', emoji: '🌱' },
+  { band: '7–10 let',  sub: 'Mladší školáci',       game: 'Otočená šipka', emoji: '⚡' },
+  { band: '11–15 let', sub: 'Starší školáci',       game: 'Větší mřížka · jemný odstín', emoji: '🚀' },
+  { band: '15+ let',   sub: 'Teenageři a dospělí',  game: 'Hustá mřížka · nepatrný odstín', emoji: '🔥' },
+];
+
 const DONE: { title: string; body: string }[] = [
   {
     title: '1 · Věkové kategorie',
@@ -50,6 +57,20 @@ const DONE: { title: string; body: string }[] = [
       'Stejně jako u první hry se náročnost mění s věkem: nejmenší (4–6) otáčejí tvar jen o pravé úhly a ' +
       'možnosti jsou jasně odlišné; starší dostávají šikmé úhly po 45° a 15+ nestandardní natočení, kde je ' +
       'rozlišení otočení od zrcadlení nejtěžší.',
+  },
+  {
+    title: '6 · Třetí hra: Hledání (vizuální)',
+    body:
+      'Přidali jsme třetí hru — vizuální hledání „co se sem nehodí". V mřížce stejných prvků je jeden ' +
+      'odlišný a úkolem je ho najít a ťuknout na něj. Trénuje pozornost a vizuální vnímání (dimenze ' +
+      '„Vizuální").',
+  },
+  {
+    title: '7 · Hledání adaptivní + správné pořadí her',
+    body:
+      'Náročnost roste s věkem dvěma páčkami — velikostí mřížky a nápadností rozdílu: 4–6 hledají jinou ' +
+      'barvu v malé mřížce, 7–10 otočenou šipku, 11–15 jemný odstín a 15+ nepatrný odstín v husté mřížce. ' +
+      'Hry teď jdou ve správném pořadí: Hledání → Posloupnost → Rotace 3D.',
   },
 ];
 
@@ -202,6 +223,60 @@ export default function HotovoPage() {
         }}
       >
         {AGE_ROWS_ROTACE.map(r => (
+          <div
+            key={r.band}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '8px 6px',
+            }}
+          >
+            <span style={{ fontSize: 22 }}>{r.emoji}</span>
+            <div style={{ minWidth: 88 }}>
+              <div
+                style={{
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: 'var(--ink)',
+                }}
+              >
+                {r.band}
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{r.sub}</div>
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-2)', fontWeight: 500, flex: 1, textAlign: 'right' }}>
+              {r.game}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <h2
+        style={{
+          fontFamily: "'Space Grotesk', system-ui, sans-serif",
+          fontWeight: 700,
+          fontSize: 16,
+          color: 'var(--ink)',
+          marginBottom: 10,
+        }}
+      >
+        Věkové rozložení · 3. hra (Hledání)
+      </h2>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          background: 'var(--surface)',
+          border: '1px solid var(--line)',
+          borderRadius: 18,
+          padding: 12,
+          marginBottom: 28,
+        }}
+      >
+        {AGE_ROWS_HLEDANI.map(r => (
           <div
             key={r.band}
             style={{

@@ -57,6 +57,27 @@ export interface RotationSet {
   items: RotationItem[];
 }
 
+/* ─── Third game (Hledání — visual search / odd-one-out) ─── */
+
+export interface HledaniCell {
+  color: string;   // hex
+  rot: number;     // stupně (využito jen v rotation módu)
+}
+
+export interface HledaniItem {
+  cols: number;
+  rows: number;
+  oddIndex: number;      // index pole, které se liší
+  base: HledaniCell;     // vzhled běžných polí
+  odd: HledaniCell;      // vzhled odlišného pole
+}
+
+export interface HledaniSet {
+  mode: 'color' | 'rotation'; // čím se odlišný prvek liší
+  rule: string;
+  items: HledaniItem[];
+}
+
 export interface GameConfig {
   id: string;
   title: string;

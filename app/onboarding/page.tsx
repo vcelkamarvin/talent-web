@@ -35,7 +35,7 @@ export default function OnboardingPage() {
     if (ageBand && gender) {
       saveAgeBand(ageBand);
       saveGender(gender);
-      router.push('/play');
+      router.push('/play/hledani');
     }
   }
 
