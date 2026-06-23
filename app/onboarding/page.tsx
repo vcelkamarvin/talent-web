@@ -68,6 +68,7 @@ export default function OnboardingPage() {
       {step === 1 && (
         <>
           <h2
+            className="fade-up"
             style={{
               fontFamily: "'Space Grotesk', system-ui, sans-serif",
               fontWeight: 700,
@@ -79,15 +80,16 @@ export default function OnboardingPage() {
           >
             Kolik ti je let?
           </h2>
-          <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 24 }}>
+          <p className="fade-up" style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 24, animationDelay: '0.06s' }}>
             Přizpůsobíme hry tvému věku.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-            {AGE_BANDS.map(band => (
+            {AGE_BANDS.map((band, i) => (
               <button
                 key={band.value}
                 onClick={() => setAgeBand(band.value)}
+                className="fade-up"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -98,9 +100,13 @@ export default function OnboardingPage() {
                   background: ageBand === band.value ? 'var(--ink)' : 'var(--surface)',
                   color: ageBand === band.value ? '#fff' : 'var(--ink)',
                   cursor: 'pointer',
-                  transition: 'all 0.15s',
+                  transition: 'border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s',
                   textAlign: 'left',
+                  animationDelay: `${0.12 + i * 0.08}s`,
                 }}
+                onMouseDown={e => (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)'}
+                onMouseUp={e => (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'}
+                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'}
               >
                 <span style={{ fontSize: 28 }}>{band.emoji}</span>
                 <div>
@@ -128,7 +134,7 @@ export default function OnboardingPage() {
             ))}
           </div>
 
-          <div style={{ marginTop: 24 }}>
+          <div className="fade-up" style={{ marginTop: 24, animationDelay: '0.46s' }}>
             <PrimaryButton disabled={!ageBand} onClick={handleNext}>
               Dál →
             </PrimaryButton>

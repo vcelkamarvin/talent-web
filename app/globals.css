@@ -94,6 +94,20 @@ body {
 .pulse-green { animation: pulse-green 0.6s ease-out; }
 .shake-red   { animation: shake-red 0.4s ease-out; }
 
+/* ─── Entrance: staggered fade-up (onboarding & intros) ─── */
+@keyframes fade-up {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.55s cubic-bezier(0.22,1,0.36,1) both; }
+
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.8); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: scale(1); }
+}
+.pop-in { animation: pop-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+
 /* ─── Orb animations ─── */
 @keyframes orb-float {
   0%, 100% { transform: translateY(0px); }
@@ -275,5 +289,6 @@ body {
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
   .pulse-green, .shake-red,
-  .orb-sphere, .orb-enter { animation: none; }
+  .orb-sphere, .orb-enter,
+  .fade-up, .pop-in { animation: none; }
 }
