@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+
 /* ─── Data ─────────────────────────────────────────────────────────────────── */
 
 const DONE_ITEMS = [
@@ -14,23 +18,99 @@ const DONE_ITEMS = [
   'Deploy na Vercel — živý link pro klienta',
 ];
 
-interface GameItem { label: string; dim: string; color: string; note?: string }
+interface GameItem {
+  label: string; dim: string; color: string; note?: string;
+  built?: boolean;     // hra už je hotová a hratelná
+  goal: string;        // co hráč dělá (cíl)
+  measures: string;    // co to měří (dovednost / dimenze)
+  distinction: string; // jak je odlišena „odlišnost" + jak roste obtížnost s věkem
+}
 
 const GAMES_REMAINING: GameItem[] = [
-  { label: 'Hledání',      dim: 'Vizuální',     color: '#F59E0B' },
-  { label: 'Rotace 3D',    dim: 'Prostorová',   color: '#7C3AED' },
-  { label: 'Rovnováha',    dim: 'Kinestetická', color: '#F97316', note: '⭐ gyroskop' },
-  { label: 'Analogie',     dim: 'Jazyková',     color: '#10B981' },
-  { label: 'Výška tónu',   dim: 'Hudební',      color: '#EC4899', note: '⭐ audio' },
-  { label: 'Odhad počtu',  dim: 'Logika',       color: '#2563EB' },
-  { label: 'Kliky',        dim: 'Kinestetická', color: '#F97316', note: '⭐ kamera' },
-  { label: 'Estetika',     dim: 'Vizuální',     color: '#F59E0B' },
-  { label: 'Matice',       dim: 'Logika',       color: '#2563EB' },
-  { label: 'Rytmus',       dim: 'Hudební',      color: '#EC4899', note: '⭐ timing' },
-  { label: 'Logická mapa', dim: 'Prostorová',   color: '#7C3AED' },
-  { label: 'Pravda / lež', dim: 'Jazyková',     color: '#10B981' },
-  { label: 'Pocity',       dim: 'Sociální',     color: '#EF4444' },
-  { label: 'Spolu',        dim: 'Sociální',     color: '#EF4444' },
+  {
+    label: 'Hledání', dim: 'Vizuální', color: '#F59E0B', built: true,
+    goal: 'V mřížce stejných prvků najít a ťuknout na ten jediný, který se liší.',
+    measures: 'Vizuální pozornost a rychlost rozlišení detailu.',
+    distinction: 'Jedno pole má jinou barvu / odstín / otočení. Obtížnost = velikost mřížky + jemnost rozdílu: 4–6 jiná barva v malé mřížce → 15+ nepatrný odstín v husté mřížce.',
+  },
+  {
+    label: 'Rotace 3D', dim: 'Prostorová', color: '#7C3AED', built: true,
+    goal: 'Najít tvar, který je stejný jako vzor — jen otočený, ne zrcadlově převrácený.',
+    measures: 'Prostorovou představivost (mentální rotace).',
+    distinction: 'Správná možnost je čistá rotace, rušivé jsou zrcadlené. Obtížnost = úhel: 4–6 pravé úhly → 15+ nestandardní natočení (30/120°).',
+  },
+  {
+    label: 'Rovnováha', dim: 'Kinestetická', color: '#F97316', note: '⭐ gyroskop',
+    goal: 'Naklánět zařízení a udržet objekt v rovnováze podle pokynů.',
+    measures: 'Rovnováhu a jemnou motoriku přes gyroskop telefonu.',
+    distinction: 'Skóre podle stability — odchylky od cíle. Obtížnost = citlivost a délka úkolu.',
+  },
+  {
+    label: 'Analogie', dim: 'Jazyková', color: '#10B981',
+    goal: 'Doplnit dvojici „A je k B jako C je k ?".',
+    measures: 'Jazykové a logické usuzování, slovní zásobu.',
+    distinction: 'Jediná možnost má stejný vztah jako vzorová dvojice, ostatní jsou blízké, ale chybné.',
+  },
+  {
+    label: 'Výška tónu', dim: 'Hudební', color: '#EC4899', note: '⭐ audio',
+    goal: 'Rozpoznat, který ze dvou tónů je vyšší (nebo nižší).',
+    measures: 'Sluchové vnímání výšky tónu.',
+    distinction: 'Porovnání dvou tónů. Obtížnost = menší rozdíl frekvencí pro starší.',
+  },
+  {
+    label: 'Odhad počtu', dim: 'Logika', color: '#2563EB',
+    goal: 'Rychle odhadnout počet prvků bez počítání po jednom.',
+    measures: 'Numerický cit (subitizing) a rychlý odhad.',
+    distinction: 'Správná hodnota vs blízké odhady. Obtížnost = víc prvků a kratší čas na pohled.',
+  },
+  {
+    label: 'Kliky', dim: 'Kinestetická', color: '#F97316', note: '⭐ kamera',
+    goal: 'Udělat co nejvíc správně provedených kliků za čas.',
+    measures: 'Fyzickou zdatnost — kamera počítá opakování (MediaPipe).',
+    distinction: 'Skóre podle počtu a kvality pohybů. Senzorová hra má ve scoringu váhu ×3.',
+  },
+  {
+    label: 'Estetika', dim: 'Vizuální', color: '#F59E0B',
+    goal: 'Vybrat harmoničtější / lépe vyváženou kompozici.',
+    measures: 'Vizuální cit a smysl pro kompozici.',
+    distinction: 'Dvě varianty, jedna je vyváženější podle pravidel kompozice (poměr, symetrie).',
+  },
+  {
+    label: 'Matice', dim: 'Logika', color: '#2563EB',
+    goal: 'Doplnit chybějící prvek v matici vzorů (typ Ravenovy matice).',
+    measures: 'Abstraktní logiku a rozpoznání pravidla.',
+    distinction: 'Jen jedna možnost pokračuje pravidlo řádku i sloupce zároveň.',
+  },
+  {
+    label: 'Rytmus', dim: 'Hudební', color: '#EC4899', note: '⭐ timing',
+    goal: 'Zopakovat přehraný rytmus ťukáním do obrazovky.',
+    measures: 'Časovou přesnost a smysl pro rytmus.',
+    distinction: 'Skóre podle odchylky v milisekundách od vzoru. Obtížnost = složitější rytmus.',
+  },
+  {
+    label: 'Logická mapa', dim: 'Prostorová', color: '#7C3AED',
+    goal: 'Najít správnou cestu nebo se zorientovat v plánku.',
+    measures: 'Prostorovou orientaci a plánování.',
+    distinction: 'Jen jedna cesta splňuje všechny podmínky. Obtížnost = větší mapa a víc překážek.',
+  },
+  {
+    label: 'Pravda / lež', dim: 'Jazyková', color: '#10B981',
+    goal: 'Rozhodnout, zda tvrzení platí, nebo ne.',
+    measures: 'Porozumění textu a kritické myšlení.',
+    distinction: 'Pravdivá vs zavádějící tvrzení. Obtížnost = jemnější nuance ve formulaci.',
+  },
+  {
+    label: 'Pocity', dim: 'Sociální', color: '#EF4444',
+    goal: 'Přiřadit emoci k situaci nebo k obličejovému výrazu.',
+    measures: 'Sociální a emoční vnímání.',
+    distinction: 'Jediná možnost odpovídá kontextu situace, ostatní jsou emočně mimo.',
+  },
+  {
+    label: 'Spolu', dim: 'Sociální', color: '#EF4444',
+    goal: 'Vybrat vhodnou reakci ve společné / týmové situaci.',
+    measures: 'Spolupráci, empatii a sociální úsudek.',
+    distinction: 'Nejvíc prosociální (vstřícná) volba je správná, ostatní jsou sobecké nebo konfliktní.',
+  },
 ];
 
 const CORE_FEATURES = [
@@ -190,13 +270,11 @@ export default function Roadmap() {
       </Section>
 
       {/* 🎮 Hry */}
-      <Section title="🎮 Hry" subtitle="1 / 15 hotovo" count={GAMES_REMAINING.length} accent="#7C3AED" bgAccent="#F5F3FF">
-        {GAMES_REMAINING.map((g, i) => (
-          <Row key={i} dimColor={g.color} dimLabel={g.dim}>
-            <span>{g.label}</span>
-            {g.note && <Badge color={g.color}>{g.note}</Badge>}
-          </Row>
-        ))}
+      <Section title="🎮 Hry" subtitle="3 / 15 hotovo" count={GAMES_REMAINING.length} accent="#7C3AED" bgAccent="#F5F3FF">
+        <p style={{ padding: '8px 18px 4px', fontSize: 11.5, color: '#8A8F9E' }}>
+          Klikni na hru → cíl, co měří a jak se liší obtížnost.
+        </p>
+        {GAMES_REMAINING.map((g, i) => <GameRow key={i} g={g} />)}
       </Section>
 
       {/* ⚙️ Core funkce */}
@@ -368,6 +446,85 @@ function Row({
           {dimLabel}
         </span>
       )}
+    </div>
+  );
+}
+
+function GameRow({ g }: { g: GameItem }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderBottom: '1px solid #F4F5F8' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '9px 18px',
+          width: '100%',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: 13,
+          color: '#0C0E16',
+          textAlign: 'left',
+          fontFamily: 'inherit',
+        }}
+      >
+        {/* status: built = check, jinak chevron */}
+        <span style={{ flexShrink: 0, width: 14, fontSize: 13, lineHeight: 1, color: g.built ? '#10B981' : '#8A8F9E' }}>
+          {g.built ? '✓' : (
+            <span style={{ display: 'inline-block', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
+          )}
+        </span>
+        <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {g.label}
+          {g.note && <Badge color={g.color}>{g.note}</Badge>}
+          {g.built && <Badge color="#10B981">hotovo</Badge>}
+        </span>
+        <span
+          style={{
+            flexShrink: 0,
+            fontSize: 10.5,
+            fontWeight: 600,
+            color: g.color,
+            background: g.color + '18',
+            padding: '2px 8px',
+            borderRadius: 99,
+            border: `1px solid ${g.color}28`,
+          }}
+        >
+          {g.dim}
+        </span>
+      </button>
+
+      {open && (
+        <div style={{ padding: '2px 18px 14px 42px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <DescLine label="Cíl" color={g.color}>{g.goal}</DescLine>
+          <DescLine label="Měří" color={g.color}>{g.measures}</DescLine>
+          <DescLine label="Odlišnost" color={g.color}>{g.distinction}</DescLine>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DescLine({ label, color, children }: { label: string; color: string; children: React.ReactNode }) {
+  return (
+    <div style={{ fontSize: 12, lineHeight: 1.5, color: '#3A3E4D' }}>
+      <span
+        style={{
+          fontWeight: 700,
+          color,
+          fontSize: 10.5,
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          marginRight: 6,
+        }}
+      >
+        {label}
+      </span>
+      {children}
     </div>
   );
 }

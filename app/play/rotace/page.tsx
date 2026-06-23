@@ -43,6 +43,30 @@ export default function RotacePage() {
   const [locked, setLocked] = useState(false);
   const startTimeRef = useRef<number>(Date.now());
 
+  // Interactive: drag the reference shape to rotate it and compare.
+  const [dragRot, setDragRot] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ startAngle: number; startRot: number } | null>(null);
+
+  const angleAt = (clientX: number, clientY: number) => {
+    const el = stageRef.current;
+    if (!el) return 0;
+    const r = el.getBoundingClientRect();
+    return (Math.atan2(clientY - (r.top + r.height / 2), clientX - (r.left + r.width / 2)) * 180) / Math.PI;
+  };
+  const onPointerDown = (e: React.PointerEvent) => {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = { startAngle: angleAt(e.clientX, e.clientY), startRot: dragRot };
+    setDragging(true);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const a = angleAt(e.clientX, e.clientY);
+    setDragRot(dragRef.current.startRot + (a - dragRef.current.startAngle));
+  };
+  const onPointerUp = () => { dragRef.current = null; setDragging(false); };
+
   const dimColor = DIMENSION_COLORS[GAME.dimension];
   const item = set.items[itemIndex];
 
@@ -70,6 +94,7 @@ export default function RotacePage() {
         setItemIndex(nextIndex);
         setOptionStates({});
         setLocked(false);
+        setDragRot(0);
         startTimeRef.current = Date.now();
       }
     }, 900);
@@ -84,24 +109,36 @@ export default function RotacePage() {
         categoryColor={dimColor}
       >
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 18 }}>
-          {/* Reference shape */}
+          {/* Reference shape — draggable to rotate */}
           <div
+            ref={stageRef}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
             style={{
               background: 'var(--surface)',
-              border: '1px solid var(--line)',
+              border: `1px solid ${dragging ? dimColor : 'var(--line)'}`,
               borderRadius: 20,
               padding: '16px 20px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               gap: 4,
-              boxShadow: '0 2px 12px -4px rgba(12,14,22,0.1)',
+              boxShadow: dragging ? `0 4px 18px -4px ${dimColor}55` : '0 2px 12px -4px rgba(12,14,22,0.1)',
+              cursor: dragging ? 'grabbing' : 'grab',
+              touchAction: 'none',
+              userSelect: 'none',
+              transition: 'box-shadow 0.2s, border-color 0.2s',
             }}
           >
             <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-              Tento tvar
+              Tento tvar · chyť a otoč
             </span>
-            <RotaGlyph rot={set.targetRot} mirror={false} color={dimColor} size={84} />
+            <div style={{ transition: dragging ? 'none' : 'transform 0.3s ease', pointerEvents: 'none' }}>
+              <RotaGlyph rot={set.targetRot + dragRot} mirror={false} color={dimColor} size={84} />
+            </div>
+            <span style={{ fontSize: 16, opacity: 0.5, marginTop: 2 }}>↻</span>
           </div>
 
           <p
@@ -138,11 +175,14 @@ export default function RotacePage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: locked ? 'default' : 'pointer',
-                  transition: 'border-color 0.15s, background 0.15s',
+                  transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
                   boxShadow: '0 1px 0 rgba(12,14,22,0.04)',
                   WebkitTapHighlightColor: 'transparent',
                   ...stateStyle[st],
                 }}
+                onPointerDown={e => { if (!locked) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.95)'; }}
+                onPointerUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+                onPointerLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
               >
                 <RotaGlyph rot={opt.rot} mirror={opt.mirror} color={dimColor} size={72} />
               </button>

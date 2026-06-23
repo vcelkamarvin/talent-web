@@ -139,6 +139,27 @@ body {
   animation: orb-glow-pulse 4s ease-in-out infinite;
 }
 
+/* Satellites orbit slowly around the sphere */
+@keyframes orb-orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.orb-orbit { animation: orb-orbit 22s linear infinite; }
+
+/* Expanding pulse rings behind the sphere */
+@keyframes orb-ring {
+  0%   { transform: scale(0.8);  opacity: 0.45; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+.orb-ring { animation: orb-ring 3.4s ease-out infinite; }
+
+/* Rotating sheen highlight on the sphere */
+@keyframes orb-sheen {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.orb-sheen { animation: orb-sheen 9s linear infinite; }
+
 /* Entrance: fade + scale up from slightly below */
 @keyframes orb-enter {
   0%   { opacity: 0; transform: translateY(22px) scale(0.88); }
@@ -290,5 +311,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .pulse-green, .shake-red,
   .orb-sphere, .orb-enter,
+  .orb-orbit, .orb-ring, .orb-sheen,
   .fade-up, .pop-in { animation: none; }
 }

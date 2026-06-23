@@ -70,6 +70,22 @@ export default function Orb({ size = 200 }: OrbProps) {
         }}
       />
 
+      {/* Expanding pulse rings */}
+      {entered && [0, 1.7].map((d, i) => (
+        <div
+          key={i}
+          className="orb-ring"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '50%',
+            border: '2px solid rgba(141,108,255,0.45)',
+            animationDelay: `${d}s`,
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
       {/* Main sphere */}
       <div
         className="orb-sphere"
@@ -111,15 +127,29 @@ export default function Orb({ size = 200 }: OrbProps) {
             background: 'radial-gradient(closest-side, rgba(255,255,255,0.15), rgba(255,255,255,0))',
           }}
         />
+        {/* Rotating sheen glint */}
+        <div
+          className="orb-sheen"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '50%',
+            background:
+              'conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.22) 55deg, transparent 130deg, transparent 360deg)',
+            pointerEvents: 'none',
+          }}
+        />
       </div>
 
-      {/* Satellites */}
-      <Sat color="var(--d1)" posStyle={{ top: '4%', left: '50%', transform: 'translateX(-50%)' }} delay={0} />
-      <Sat color="var(--d3)" posStyle={{ top: '22%', right: '3%' }}  delay={0.55} />
-      <Sat color="var(--d4)" posStyle={{ bottom: '20%', right: '2%' }} delay={1.1} />
-      <Sat color="var(--d5)" posStyle={{ bottom: '2%', left: '54%' }} delay={1.65} />
-      <Sat color="var(--d6)" posStyle={{ bottom: '20%', left: '2%' }} delay={2.2} />
-      <Sat color="var(--d2)" posStyle={{ top: '22%', left: '3%' }}    delay={2.75} />
+      {/* Satellites — orbit slowly around the sphere */}
+      <div className="orb-orbit" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <Sat color="var(--d1)" posStyle={{ top: '4%', left: '50%', transform: 'translateX(-50%)' }} delay={0} />
+        <Sat color="var(--d3)" posStyle={{ top: '22%', right: '3%' }}  delay={0.55} />
+        <Sat color="var(--d4)" posStyle={{ bottom: '20%', right: '2%' }} delay={1.1} />
+        <Sat color="var(--d5)" posStyle={{ bottom: '2%', left: '54%' }} delay={1.65} />
+        <Sat color="var(--d6)" posStyle={{ bottom: '20%', left: '2%' }} delay={2.2} />
+        <Sat color="var(--d2)" posStyle={{ top: '22%', left: '3%' }}    delay={2.75} />
+      </div>
     </div>
   );
 }
