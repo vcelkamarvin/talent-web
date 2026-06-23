@@ -83,6 +83,22 @@ export default function HomePage() {
         <Spectrum width={64} />
         7 dimenzí talentu
       </div>
+
+      {/* Changelog link */}
+      <Link
+        href="/hotovo"
+        style={{
+          display: 'block',
+          textAlign: 'center',
+          marginTop: 12,
+          fontSize: 12,
+          color: 'var(--ink-3)',
+          fontWeight: 500,
+          textDecoration: 'none',
+        }}
+      >
+        ✅ Hotové úkoly
+      </Link>
     </div>
   );
 }

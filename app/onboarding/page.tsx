@@ -7,9 +7,10 @@ import { useSession } from '@/lib/session/SessionContext';
 import type { AgeBand, Gender } from '@/lib/core/types';
 
 const AGE_BANDS: { value: AgeBand; label: string; sub: string; emoji: string }[] = [
-  { value: '4-6',   label: '4–6 let',   sub: 'Předškolní',    emoji: '🌱' },
-  { value: '7-10',  label: '7–10 let',  sub: 'Mladší školní', emoji: '⚡' },
-  { value: '11-15', label: '11–15 let', sub: 'Starší školní', emoji: '🚀' },
+  { value: '4-6',   label: '4–6 let',   sub: 'Předškoláci · hra s barvami', emoji: '🌱' },
+  { value: '7-10',  label: '7–10 let',  sub: 'Mladší školáci · lehké úlohy', emoji: '⚡' },
+  { value: '11-15', label: '11–15 let', sub: 'Starší školáci · střední úlohy', emoji: '🚀' },
+  { value: '15+',   label: '15+ let',   sub: 'Teenageři a dospělí · těžké úlohy', emoji: '🔥' },
 ];
 
 const GENDERS: { value: Gender; label: string; emoji: string }[] = [
