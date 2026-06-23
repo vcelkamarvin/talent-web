@@ -7,7 +7,7 @@ import Spectrum from '@/components/Spectrum';
 import { useSession } from '@/lib/session/SessionContext';
 import { GAME_CYCLE } from '@/lib/core/games';
 
-const BUILT_GAMES = 3; // Paměť, Posloupnost, Skládačka
+const BUILT_GAMES = 4; // Paměť, Posloupnost, Zámek, Odhad počtu
 
 export default function ResultPage() {
   const { session, resetSession } = useSession();

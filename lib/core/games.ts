@@ -1,4 +1,4 @@
-import type { GameConfig, SequenceSet, FitSet, HledaniSet, MemorySet, AgeBand } from './types';
+import type { GameConfig, SequenceSet, FitSet, HledaniSet, MemorySet, OdhadSet, LockSet, AgeBand } from './types';
 
 export const GAME_CYCLE: GameConfig[] = [
   { id: 'hledani',     title: 'Paměť',       dimension: 'd5', label: 'Vizuální' },
@@ -9,7 +9,7 @@ export const GAME_CYCLE: GameConfig[] = [
       { seq: [1, 1, 2, 3, 5, null], answer: 8,  options: [7, 8, 9, 11],   rule: 'Fibonacci' },
     ],
   },
-  { id: 'rotace3d',   title: 'Skládačka',   dimension: 'd2', label: 'Prostorová' },
+  { id: 'rotace3d',   title: 'Zámek',       dimension: 'd2', label: 'Prostorová' },
   { id: 'rovnovaha',  title: 'Rovnováha',   dimension: 'd3', label: 'Kinestetická' },
   { id: 'analogie',   title: 'Analogie',    dimension: 'd6', label: 'Jazyková' },
   { id: 'vyska-tonu', title: 'Výška tónu',  dimension: 'd4', label: 'Hudební' },
@@ -210,4 +210,72 @@ export const MEMORY_BY_AGE: Record<AgeBand, MemorySet> = {
 /** Returns the memory set for an age band (defaults to 11–15 if unset). */
 export function getMemorySet(ageBand: AgeBand | null): MemorySet {
   return MEMORY_BY_AGE[ageBand ?? '11-15'];
+}
+
+/* ─── Odhad počtu: bleskový odhad množství (logika) ───
+   Krátce blikne pole teček, hráč odhadne kolik jich bylo.
+   Obtížnost = počet teček + kratší blik + bližší možnosti.
+   4–6   → málo teček, trvale (klidné počítání)
+   7–10  → ~9–16, blik 1,6 s
+   11–15 → ~24–41, blik 0,9 s, možnosti blíž
+   15+   → ~52–78, blik 0,55 s, možnosti těsně u sebe              */
+
+export const ODHAD_BY_AGE: Record<AgeBand, OdhadSet> = {
+  '4-6': {
+    flashMs: 0, persistent: true,
+    items: [
+      { count: 4, options: [3, 4, 5, 6], answer: 4 },
+      { count: 6, options: [5, 6, 7, 8], answer: 6 },
+      { count: 3, options: [2, 3, 4, 5], answer: 3 },
+    ],
+  },
+  '7-10': {
+    flashMs: 1600, persistent: false,
+    items: [
+      { count: 12, options: [9, 12, 15, 18], answer: 12 },
+      { count: 9,  options: [6, 9, 12, 15], answer: 9 },
+      { count: 16, options: [12, 16, 20, 24], answer: 16 },
+    ],
+  },
+  '11-15': {
+    flashMs: 900, persistent: false,
+    items: [
+      { count: 24, options: [20, 24, 28, 32], answer: 24 },
+      { count: 33, options: [27, 30, 33, 36], answer: 33 },
+      { count: 41, options: [35, 38, 41, 44], answer: 41 },
+    ],
+  },
+  '15+': {
+    flashMs: 550, persistent: false,
+    items: [
+      { count: 52, options: [48, 50, 52, 56], answer: 52 },
+      { count: 67, options: [63, 67, 69, 71], answer: 67 },
+      { count: 78, options: [74, 76, 78, 82], answer: 78 },
+    ],
+  },
+};
+
+/** Returns the count-estimation set for an age band (defaults to 11–15 if unset). */
+export function getOdhadSet(ageBand: AgeBand | null): OdhadSet {
+  return ODHAD_BY_AGE[ageBand ?? '11-15'];
+}
+
+/* ─── Zámek: otáčení soustředných prstenů (prostorová, Hogwarts styl) ───
+   Otoč každý prsten tak, aby jeho gem mířil nahoru k značce.
+   Obtížnost = počet prstenů + jemnost kroku (víc pozic).
+   4–6   → 1 prsten, krok 90°
+   7–10  → 2 prsteny, krok 90°
+   11–15 → 3 prsteny, krok 60°
+   15+   → 3 prsteny, krok 45° (8 pozic)                            */
+
+export const LOCK_BY_AGE: Record<AgeBand, LockSet> = {
+  '4-6':   { rings: 1, stepDeg: 90 },
+  '7-10':  { rings: 2, stepDeg: 90 },
+  '11-15': { rings: 3, stepDeg: 60 },
+  '15+':   { rings: 3, stepDeg: 45 },
+};
+
+/** Returns the lock config for an age band (defaults to 11–15 if unset). */
+export function getLockSet(ageBand: AgeBand | null): LockSet {
+  return LOCK_BY_AGE[ageBand ?? '11-15'];
 }

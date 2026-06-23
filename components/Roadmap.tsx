@@ -12,7 +12,7 @@ const DONE_ITEMS = [
   'Přihlášení — e-mail + "Pokračovat jako host"',
   'Domovská obrazovka (Home)',
   'Onboarding — věk (4–6 / 7–10 / 11–15 / 15+) + pohlaví, animovaný vstup',
-  'Hry 1–3: Paměť, Posloupnost, Skládačka — adaptivní dle věku, herní efekty',
+  'Hry 1–4: Paměť, Posloupnost, Zámek, Odhad počtu — adaptivní dle věku, herní efekty',
   'Výsledková obrazovka — stav prototypu (radar přijde po všech hrách)',
   'Showcase rámeček + klientská roadmapa (tento seznam)',
   'Deploy na Vercel — živý link pro klienta',
@@ -53,15 +53,15 @@ const GAMES_REMAINING: GameItem[] = [
     ],
   },
   {
-    label: 'Skládačka', dim: 'Prostorová', color: '#7C3AED', built: true,
-    goal: 'Vybrat dílek, který přesně sedne do díry (stejný tvar i natočení).',
-    measures: 'Prostorovou představivost a rozlišení tvarů.',
-    distinction: 'Jediný dílek pasuje. Obtížnost = podobnost tvarů a u nejstarších i natočení dílku.',
+    label: 'Zámek', dim: 'Prostorová', color: '#7C3AED', built: true,
+    goal: 'Otáčet soustředné prsteny tak, aby všechny gemy mířily nahoru ke značce — a odemknout zámek (styl Hogwarts Legacy).',
+    measures: 'Prostorovou představivost, plánování otáčení a trpělivost.',
+    distinction: 'Obtížnost = počet prstenů + jemnost kroku (víc pozic = víc otáčení). Každé kolo nový zámek.',
     variants: [
-      { age: '4–6', detail: 'Základní tvary — kruh, čtverec, hvězda (hodně odlišné)' },
-      { age: '7–10', detail: 'Víc tvarů — pětiúhelník vs šestiúhelník' },
-      { age: '11–15', detail: 'Podobné mnohoúhelníky — počítej hrany' },
-      { age: '15+', detail: 'Otočené tvary — záleží na natočení (šipka)' },
+      { age: '4–6', detail: '1 prsten · krok 90° (4 pozice)' },
+      { age: '7–10', detail: '2 prsteny · krok 90°' },
+      { age: '11–15', detail: '3 prsteny · krok 60° (6 pozic)' },
+      { age: '15+', detail: '3 prsteny · krok 45° (8 pozic)' },
     ],
   },
   {
@@ -83,10 +83,16 @@ const GAMES_REMAINING: GameItem[] = [
     distinction: 'Porovnání dvou tónů. Obtížnost = menší rozdíl frekvencí pro starší.',
   },
   {
-    label: 'Odhad počtu', dim: 'Logika', color: '#2563EB',
-    goal: 'Rychle odhadnout počet prvků bez počítání po jednom.',
+    label: 'Odhad počtu', dim: 'Logika', color: '#2563EB', built: true,
+    goal: 'Krátce blikne pole teček — odhadni, kolik jich bylo (bez počítání po jednom).',
     measures: 'Numerický cit (subitizing) a rychlý odhad.',
-    distinction: 'Správná hodnota vs blízké odhady. Obtížnost = víc prvků a kratší čas na pohled.',
+    distinction: 'Obtížnost = počet teček + kratší blik + bližší možnosti.',
+    variants: [
+      { age: '4–6', detail: 'Málo teček (3–6), trvale — klidné počítání' },
+      { age: '7–10', detail: '~9–16 teček · blik 1,6 s' },
+      { age: '11–15', detail: '~24–41 teček · blik 0,9 s · možnosti blíž' },
+      { age: '15+', detail: '~52–78 teček · blik 0,55 s · možnosti těsně' },
+    ],
   },
   {
     label: 'Kliky', dim: 'Kinestetická', color: '#F97316', note: '⭐ kamera',
@@ -295,7 +301,7 @@ export default function Roadmap() {
       </Section>
 
       {/* 🎮 Hry */}
-      <Section title="🎮 Hry" subtitle="3 / 15 hotovo" count={GAMES_REMAINING.length} accent="#7C3AED" bgAccent="#F5F3FF">
+      <Section title="🎮 Hry" subtitle="4 / 15 hotovo" count={GAMES_REMAINING.length} accent="#7C3AED" bgAccent="#F5F3FF">
         <p style={{ padding: '8px 18px 4px', fontSize: 11.5, color: '#8A8F9E' }}>
           Klikni na hru → cíl, co měří a jak se liší obtížnost.
         </p>

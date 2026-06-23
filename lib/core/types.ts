@@ -72,6 +72,27 @@ export interface HledaniSet {
   items: HledaniItem[];
 }
 
+/* ─── Odhad počtu — bleskový odhad množství (logika) ─── */
+
+export interface OdhadItem {
+  count: number;     // skutečný počet teček
+  options: number[]; // nabízené odpovědi
+  answer: number;    // správná
+}
+
+export interface OdhadSet {
+  flashMs: number;     // jak dlouho jsou tečky vidět (0 = trvale)
+  persistent: boolean; // true = tečky zůstanou (nejmenší počítají v klidu)
+  items: OdhadItem[];
+}
+
+/* ─── Zámek — otáčení soustředných prstenů (prostorová, Hogwarts styl) ─── */
+
+export interface LockSet {
+  rings: number;   // počet prstenů
+  stepDeg: number; // o kolik stupňů se prsten otočí na klik
+}
+
 /* ─── Paměť — sekvenční paměťová hra (Simon) ─── */
 
 export interface MemorySet {

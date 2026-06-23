@@ -1,98 +1,79 @@
 'use client';
 
-import { useState, useRef, useCallback, useMemo, type CSSProperties } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import GameLayout from '@/components/GameLayout';
 import { AmbientField, Burst } from '@/components/GameFX';
-import { GAME_CYCLE, DIMENSION_COLORS, getFitSet } from '@/lib/core/games';
+import { GAME_CYCLE, DIMENSION_COLORS, getLockSet } from '@/lib/core/games';
 import { useSession } from '@/lib/session/SessionContext';
-import type { ShapeKey } from '@/lib/core/types';
 
 const GAME_INDEX = 2; // Prostorová
 const GAME = GAME_CYCLE[GAME_INDEX];
+const ROUNDS = 3;
+const RING_COLORS = ['#7C3AED', '#2563EB', '#EC4899'];
+const RADII = [30, 58, 86];
 
-type OptionState = 'default' | 'correct' | 'wrong';
-type StyleVars = CSSProperties & { [key: `--${string}`]: string | number };
-
-/** One SVG silhouette per shape key. `hole` = dashed cut-out, jinak plný barevný dílek. */
-function Shape({ shape, rot = 0, color, size = 72, hole = false }: { shape: ShapeKey; rot?: number; color: string; size?: number; hole?: boolean }) {
-  const fill = hole ? 'var(--bg)' : color;
-  const stroke = hole ? 'var(--ink-3)' : 'none';
-  const sw = hole ? 2.5 : 0;
-  const p = { fill, stroke, strokeWidth: sw, strokeDasharray: hole ? '6 5' : undefined, strokeLinejoin: 'round' as const };
-
-  let el: React.ReactNode = null;
-  switch (shape) {
-    case 'circle':   el = <circle cx="50" cy="50" r="36" {...p} />; break;
-    case 'square':   el = <rect x="16" y="16" width="68" height="68" rx="10" {...p} />; break;
-    case 'triangle': el = <polygon points="50,16 84,82 16,82" {...p} />; break;
-    case 'diamond':  el = <polygon points="50,14 86,50 50,86 14,50" {...p} />; break;
-    case 'pentagon': el = <polygon points="50,14 84.24,38.88 71.16,79.13 28.84,79.13 15.76,38.88" {...p} />; break;
-    case 'hexagon':  el = <polygon points="50,14 81.18,32 81.18,68 50,86 18.82,68 18.82,32" {...p} />; break;
-    case 'heptagon': el = <polygon points="50,14 78.14,27.55 85.1,58.01 65.62,82.44 34.38,82.44 14.9,58.01 21.86,27.55" {...p} />; break;
-    case 'octagon':  el = <polygon points="50,14 75.46,24.54 86,50 75.46,75.46 50,86 24.54,75.46 14,50 24.54,24.54" {...p} />; break;
-    case 'star':     el = <polygon points="50,12 59.4,37.06 86.14,38.26 65.22,54.94 72.33,80.74 50,66 27.67,80.74 34.78,54.94 13.86,38.26 40.6,37.06" {...p} />; break;
-    case 'heart':    el = <path d="M50 80 C 16 56, 22 26, 44 28 C 49 28.5, 50 34, 50 38 C 50 34, 51 28.5, 56 28 C 78 26, 84 56, 50 80 Z" {...p} />; break;
-    case 'arrow':    el = <polygon points="16,40 56,40 56,24 86,50 56,76 56,60 16,60" {...p} />; break;
-    case 'cross':    el = <polygon points="40,16 60,16 60,40 84,40 84,60 60,60 60,84 40,84 40,60 16,60 16,40 40,40" {...p} />; break;
-  }
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
-      <g transform={`rotate(${rot} 50 50)`}>{el}</g>
-    </svg>
-  );
+function mulberry32(a: number) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
-const stateStyle: Record<OptionState, CSSProperties> = {
-  default: { background: 'var(--surface)', border: '1.5px solid var(--line-2)' },
-  correct: { background: '#ECFDF5', border: '1.5px solid #10B981' },
-  wrong:   { background: '#FEF2F2', border: '1.5px solid #EF4444' },
-};
-
-export default function SkladackaPage() {
+export default function ZamekPage() {
   const { session, recordAnswer } = useSession();
   const router = useRouter();
+  const set = useMemo(() => getLockSet(session.ageBand), [session.ageBand]);
 
-  const set = useMemo(() => getFitSet(session.ageBand), [session.ageBand]);
+  const rings = set.rings;
+  const step = set.stepDeg;
+  const positions = Math.round(360 / step);
+
+  const genOffsets = useMemo(() => {
+    return (seed: number): number[] =>
+      Array.from({ length: rings }, (_, r) => {
+        const rnd = mulberry32(seed * 131 + r * 17 + 1);
+        const m = 1 + Math.floor(rnd() * (positions - 1)); // non-zero multiple
+        return (m * step) % 360;
+      });
+  }, [rings, positions, step]);
 
   const [itemIndex, setItemIndex] = useState(0);
-  const [optionStates, setOptionStates] = useState<Record<number, OptionState>>({});
-  const [locked, setLocked] = useState(false);
-  const [answered, setAnswered] = useState(false);
-  const startTimeRef = useRef<number>(Date.now());
+  const [offsets, setOffsets] = useState<number[]>(() => genOffsets(0));
+  const [solved, setSolved] = useState(false);
+  const timers = useRef<number[]>([]);
+  const startRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    setOffsets(genOffsets(itemIndex));
+    setSolved(false);
+    startRef.current = Date.now();
+  }, [itemIndex, genOffsets]);
+
+  useEffect(() => {
+    const t = timers.current;
+    return () => { t.forEach(clearTimeout); };
+  }, []);
 
   const dimColor = DIMENSION_COLORS[GAME.dimension];
-  const item = set.items[itemIndex];
-  const solved = optionStates[item.answer] === 'correct';
 
-  const handleOption = useCallback((i: number) => {
-    if (locked) return;
-    setLocked(true);
-    setAnswered(true);
-
-    const reactionMs = Date.now() - startTimeRef.current;
-    const correct = i === item.answer;
-
-    setOptionStates({ [i]: correct ? 'correct' : 'wrong' });
-    if (!correct) {
-      setTimeout(() => setOptionStates({ [i]: 'wrong', [item.answer]: 'correct' }), 300);
+  function rotateRing(r: number) {
+    if (solved) return;
+    const next = offsets.map((o, idx) => (idx === r ? (o + step) % 360 : o));
+    setOffsets(next);
+    if (next.every(o => o === 0)) {
+      setSolved(true);
+      recordAnswer({ gameId: GAME.id, itemIndex, answer: itemIndex, correct: true, reactionMs: Date.now() - startRef.current });
+      const t = window.setTimeout(() => {
+        const nx = itemIndex + 1;
+        if (nx >= ROUNDS) router.push('/play/odhad');
+        else setItemIndex(nx);
+      }, 1150);
+      timers.current.push(t);
     }
-
-    recordAnswer({ gameId: GAME.id, itemIndex, answer: i, correct, reactionMs });
-
-    setTimeout(() => {
-      const nextIndex = itemIndex + 1;
-      if (nextIndex >= set.items.length) {
-        router.push('/result');
-      } else {
-        setItemIndex(nextIndex);
-        setOptionStates({});
-        setLocked(false);
-        setAnswered(false);
-        startTimeRef.current = Date.now();
-      }
-    }, 1000);
-  }, [locked, item, itemIndex, set.items.length, recordAnswer, router]);
+  }
 
   return (
     <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', padding: '52px 24px 36px', minHeight: '100dvh', overflow: 'hidden' }}>
@@ -104,93 +85,94 @@ export default function SkladackaPage() {
           categoryLabel={GAME.label}
           categoryColor={dimColor}
         >
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-            {/* Board with the hole — glows + pulses */}
-            <div
-              key={`hole${itemIndex}`}
-              className={`q-in ${solved ? '' : 'glow-soft'}`}
-              style={{
-                position: 'relative',
-                background: 'rgba(255,255,255,0.8)',
-                backdropFilter: 'blur(6px)',
-                border: `1px solid ${solved ? '#10B981' : 'var(--line)'}`,
-                borderRadius: 24,
-                padding: '22px 28px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 6,
-                transition: 'border-color 0.25s',
-                '--glow': `${dimColor}55`,
-              } as StyleVars}
-            >
-              <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                {solved ? '✓ Pasuje!' : 'Tato díra'}
-              </span>
-              <div className={solved ? 'pop-bounce' : undefined}>
-                <Shape shape={item.hole.shape} rot={item.hole.rot} color={dimColor} size={96} hole={!solved} />
-              </div>
-              {solved && <Burst n={18} />}
-            </div>
-
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 18 }}>
             <p
-              key={`q${itemIndex}`}
+              key={`q${itemIndex}-${solved}`}
               className="q-in"
               style={{
                 fontFamily: "'Space Grotesk', system-ui, sans-serif",
-                fontWeight: 600,
-                fontSize: 16,
-                color: 'var(--ink-2)',
+                fontWeight: 700,
+                fontSize: 20,
+                color: 'var(--ink)',
                 textAlign: 'center',
               }}
             >
-              Který dílek sem pasuje? 🧩
+              {solved ? 'Odemčeno! 🔓' : 'Zarovnej prsteny 🔐'}
             </p>
-            <p style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', marginTop: -6 }}>
-              <span style={{ fontWeight: 600, color: dimColor }}>{set.rule}</span>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-3)', textAlign: 'center', marginTop: -8 }}>
+              Ťukej na prsten — otoč ho, ať gem míří nahoru ke značce
             </p>
+
+            {/* Lock */}
+            <div style={{ position: 'relative', width: 260, height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Hogwarts-ish radial glow */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 24,
+                  borderRadius: '50%',
+                  background: solved
+                    ? 'radial-gradient(circle, rgba(16,185,129,0.35), transparent 70%)'
+                    : `radial-gradient(circle, ${dimColor}22, transparent 70%)`,
+                  transition: 'background 0.4s',
+                }}
+              />
+              <svg width={260} height={260} viewBox="0 0 200 200" style={{ position: 'relative' }}>
+                {/* target marker (top) */}
+                <polygon points="100,2 94,13 106,13" fill="var(--ink)" opacity={0.55} />
+                {Array.from({ length: rings }).map((_, r) => {
+                  const radius = RADII[r];
+                  const aligned = offsets[r] === 0;
+                  const color = aligned ? '#10B981' : RING_COLORS[r];
+                  return (
+                    <g key={r}>
+                      {/* track */}
+                      <circle cx="100" cy="100" r={radius} fill="none" stroke={`${color}22`} strokeWidth={12} />
+                      {/* rotating gem + spoke */}
+                      <g transform={`rotate(${offsets[r]} 100 100)`} style={{ transition: 'transform 0.4s cubic-bezier(0.34,1.4,0.64,1)' }}>
+                        <line x1="100" y1="100" x2="100" y2={100 - radius} stroke={`${color}55`} strokeWidth={3} strokeLinecap="round" />
+                        <circle cx="100" cy={100 - radius} r={aligned ? 9 : 7.5} fill={color} style={{ filter: `drop-shadow(0 0 ${aligned ? 8 : 5}px ${color})`, transition: 'r 0.2s' }} />
+                      </g>
+                      {/* invisible hit-band */}
+                      <circle
+                        cx="100" cy="100" r={radius} fill="none" stroke="transparent" strokeWidth={24}
+                        pointerEvents="stroke"
+                        style={{ cursor: solved ? 'default' : 'pointer' }}
+                        onClick={() => rotateRing(r)}
+                      />
+                    </g>
+                  );
+                })}
+                {/* center hub */}
+                <circle cx="100" cy="100" r={14} fill={solved ? '#10B981' : 'var(--ink)'} opacity={0.9} style={{ transition: 'fill 0.3s' }} />
+                <text x="100" y="105" textAnchor="middle" fontSize="14" fill="#fff">{solved ? '🔓' : '🔒'}</text>
+              </svg>
+              {solved && <Burst n={22} />}
+            </div>
+
+            {/* ring alignment chips */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              {Array.from({ length: rings }).map((_, r) => {
+                const aligned = offsets[r] === 0;
+                const color = aligned ? '#10B981' : RING_COLORS[r];
+                return (
+                  <span
+                    key={r}
+                    style={{
+                      width: 12, height: 12, borderRadius: '50%',
+                      background: color,
+                      boxShadow: aligned ? `0 0 10px 1px ${color}` : 'none',
+                      transition: 'all 0.25s',
+                    }}
+                  />
+                );
+              })}
+            </div>
           </div>
 
-          {/* Options 2×2 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, paddingBottom: 8 }}>
-            {item.options.map((opt, i) => {
-              const st = optionStates[i] ?? 'default';
-              const dimmed = answered && st === 'default';
-              return (
-                <button
-                  key={`${itemIndex}-${i}`}
-                  disabled={locked}
-                  onClick={() => handleOption(i)}
-                  className={`pop-in ${st === 'correct' ? 'pop-bounce' : ''} ${st === 'wrong' ? 'shake-red' : ''}`}
-                  style={{
-                    position: 'relative',
-                    height: 104,
-                    borderRadius: 16,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: locked ? 'default' : 'pointer',
-                    transition: 'border-color 0.15s, background 0.15s, transform 0.12s, opacity 0.25s',
-                    boxShadow: st === 'correct' ? '0 0 22px -2px rgba(16,185,129,0.5)' : '0 1px 0 rgba(12,14,22,0.04)',
-                    WebkitTapHighlightColor: 'transparent',
-                    animationDelay: `${i * 0.06}s`,
-                    opacity: dimmed ? 0.3 : 1,
-                    ...stateStyle[st],
-                  }}
-                  onPointerDown={e => { if (!locked) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.95)'; }}
-                  onPointerUp={e => { if (!answered) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-                  onPointerLeave={e => { if (!answered) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-                >
-                  <Shape shape={opt.shape} rot={opt.rot} color={dimColor} size={72} />
-                  {st === 'correct' && <Burst n={14} />}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Progress dots */}
+          {/* Round progress */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, paddingTop: 8 }}>
-            {set.items.map((_, i) => (
+            {Array.from({ length: ROUNDS }).map((_, i) => (
               <div
                 key={i}
                 style={{
