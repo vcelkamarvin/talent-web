@@ -1,4 +1,4 @@
-import type { GameConfig, SequenceSet, RotationSet, HledaniSet, AgeBand } from './types';
+import type { GameConfig, SequenceSet, FitSet, HledaniSet, AgeBand } from './types';
 
 export const GAME_CYCLE: GameConfig[] = [
   { id: 'hledani',     title: 'Hledání',     dimension: 'd5', label: 'Vizuální' },
@@ -9,7 +9,7 @@ export const GAME_CYCLE: GameConfig[] = [
       { seq: [1, 1, 2, 3, 5, null], answer: 8,  options: [7, 8, 9, 11],   rule: 'Fibonacci' },
     ],
   },
-  { id: 'rotace3d',   title: 'Rotace 3D',   dimension: 'd2', label: 'Prostorová' },
+  { id: 'rotace3d',   title: 'Skládačka',   dimension: 'd2', label: 'Prostorová' },
   { id: 'rovnovaha',  title: 'Rovnováha',   dimension: 'd3', label: 'Kinestetická' },
   { id: 'analogie',   title: 'Analogie',    dimension: 'd6', label: 'Jazyková' },
   { id: 'vyska-tonu', title: 'Výška tónu',  dimension: 'd4', label: 'Hudební' },
@@ -97,101 +97,92 @@ export function getSequenceSet(ageBand: AgeBand | null): SequenceSet {
   return SEQUENCE_BY_AGE[ageBand ?? '11-15'];
 }
 
-/* ─── Second game (Rotace 3D): age-adaptive mental rotation ───
-   Cíl: najít tu možnost, která je STEJNÝ tvar, jen otočený (ne zrcadlený).
-   Přesně jedna možnost má mirror:false = správná odpověď.
-   4–6   → pravé úhly (0/90/180/270), jasně odlišné
-   7–10  → pravé úhly, zrcadla i ve stejném úhlu (těžší rozlišení)
-   11–15 → šikmé úhly po 45°
-   15+   → nestandardní úhly (30/120/210/300…)                      */
+/* ─── Second game (Skládačka): „který dílek pasuje do díry" (prostorová) ───
+   Cíl: vybrat dílek, který přesně sedne do díry (stejný tvar i natočení).
+   4–6   → základní, hodně odlišné tvary (kruh / čtverec / hvězda…)
+   7–10  → víc tvarů, méně nápadné rozdíly
+   11–15 → podobné mnohoúhelníky (počítej hrany)
+   15+   → otočené tvary — záleží na natočení (šipka)                  */
 
-export const ROTATION_BY_AGE: Record<AgeBand, RotationSet> = {
+export const FIT_BY_AGE: Record<AgeBand, FitSet> = {
   '4-6': {
-    rule: 'Najdi stejný tvar, jen otočený',
-    targetRot: 0,
+    rule: 'Který dílek sedne do díry?',
     items: [
-      { options: [{ rot: 90, mirror: true }, { rot: 180, mirror: false }, { rot: 0, mirror: true }, { rot: 270, mirror: true }], answer: 1 },
-      { options: [{ rot: 90, mirror: false }, { rot: 180, mirror: true }, { rot: 270, mirror: true }, { rot: 0, mirror: true }], answer: 0 },
-      { options: [{ rot: 0, mirror: true }, { rot: 270, mirror: true }, { rot: 270, mirror: false }, { rot: 90, mirror: true }], answer: 2 },
+      { hole: { shape: 'circle', rot: 0 },   options: [{ shape: 'square', rot: 0 }, { shape: 'circle', rot: 0 }, { shape: 'triangle', rot: 0 }, { shape: 'star', rot: 0 }], answer: 1 },
+      { hole: { shape: 'star', rot: 0 },      options: [{ shape: 'star', rot: 0 }, { shape: 'heart', rot: 0 }, { shape: 'circle', rot: 0 }, { shape: 'square', rot: 0 }], answer: 0 },
+      { hole: { shape: 'triangle', rot: 0 },  options: [{ shape: 'diamond', rot: 0 }, { shape: 'square', rot: 0 }, { shape: 'triangle', rot: 0 }, { shape: 'heart', rot: 0 }], answer: 2 },
     ],
   },
   '7-10': {
-    rule: 'Stejný tvar, jen otočený (ne převrácený)',
-    targetRot: 0,
+    rule: 'Který tvar pasuje?',
     items: [
-      { options: [{ rot: 0, mirror: true }, { rot: 90, mirror: true }, { rot: 270, mirror: false }, { rot: 180, mirror: true }], answer: 2 },
-      { options: [{ rot: 180, mirror: false }, { rot: 180, mirror: true }, { rot: 90, mirror: true }, { rot: 0, mirror: true }], answer: 0 },
-      { options: [{ rot: 90, mirror: true }, { rot: 270, mirror: false }, { rot: 0, mirror: true }, { rot: 180, mirror: true }], answer: 1 },
+      { hole: { shape: 'hexagon', rot: 0 },   options: [{ shape: 'pentagon', rot: 0 }, { shape: 'hexagon', rot: 0 }, { shape: 'octagon', rot: 0 }, { shape: 'square', rot: 0 }], answer: 1 },
+      { hole: { shape: 'diamond', rot: 0 },   options: [{ shape: 'diamond', rot: 0 }, { shape: 'square', rot: 0 }, { shape: 'triangle', rot: 0 }, { shape: 'star', rot: 0 }], answer: 0 },
+      { hole: { shape: 'star', rot: 0 },      options: [{ shape: 'pentagon', rot: 0 }, { shape: 'star', rot: 0 }, { shape: 'hexagon', rot: 0 }, { shape: 'cross', rot: 0 }], answer: 1 },
     ],
   },
   '11-15': {
-    rule: 'Pozor na zrcadlení',
-    targetRot: 0,
+    rule: 'Spočítej hrany — co pasuje?',
     items: [
-      { options: [{ rot: 45, mirror: true }, { rot: 135, mirror: false }, { rot: 225, mirror: true }, { rot: 315, mirror: true }], answer: 1 },
-      { options: [{ rot: 45, mirror: false }, { rot: 135, mirror: true }, { rot: 225, mirror: true }, { rot: 315, mirror: true }], answer: 0 },
-      { options: [{ rot: 315, mirror: true }, { rot: 225, mirror: true }, { rot: 135, mirror: true }, { rot: 45, mirror: false }], answer: 3 },
+      { hole: { shape: 'pentagon', rot: 0 },  options: [{ shape: 'hexagon', rot: 0 }, { shape: 'heptagon', rot: 0 }, { shape: 'pentagon', rot: 0 }, { shape: 'octagon', rot: 0 }], answer: 2 },
+      { hole: { shape: 'heptagon', rot: 0 },  options: [{ shape: 'heptagon', rot: 0 }, { shape: 'hexagon', rot: 0 }, { shape: 'octagon', rot: 0 }, { shape: 'pentagon', rot: 0 }], answer: 0 },
+      { hole: { shape: 'octagon', rot: 0 },   options: [{ shape: 'heptagon', rot: 0 }, { shape: 'octagon', rot: 0 }, { shape: 'hexagon', rot: 0 }, { shape: 'pentagon', rot: 0 }], answer: 1 },
     ],
   },
   '15+': {
-    rule: 'Šikmá natočení — pozor na zrcadlení',
-    targetRot: 0,
+    rule: 'Pozor na natočení dílku',
     items: [
-      { options: [{ rot: 30, mirror: true }, { rot: 120, mirror: false }, { rot: 210, mirror: true }, { rot: 300, mirror: true }], answer: 1 },
-      { options: [{ rot: 150, mirror: false }, { rot: 60, mirror: true }, { rot: 240, mirror: true }, { rot: 330, mirror: true }], answer: 0 },
-      { options: [{ rot: 300, mirror: true }, { rot: 210, mirror: true }, { rot: 120, mirror: false }, { rot: 30, mirror: true }], answer: 2 },
+      { hole: { shape: 'arrow', rot: 0 },     options: [{ shape: 'arrow', rot: 90 }, { shape: 'arrow', rot: 0 }, { shape: 'arrow', rot: 180 }, { shape: 'arrow', rot: 270 }], answer: 1 },
+      { hole: { shape: 'arrow', rot: 90 },    options: [{ shape: 'arrow', rot: 0 }, { shape: 'arrow', rot: 90 }, { shape: 'arrow', rot: 270 }, { shape: 'arrow', rot: 180 }], answer: 1 },
+      { hole: { shape: 'heptagon', rot: 0 },  options: [{ shape: 'octagon', rot: 0 }, { shape: 'heptagon', rot: 0 }, { shape: 'hexagon', rot: 0 }, { shape: 'star', rot: 0 }], answer: 1 },
     ],
   },
 };
 
-/** Returns the rotation set for an age band (defaults to 11–15 if unset). */
-export function getRotationSet(ageBand: AgeBand | null): RotationSet {
-  return ROTATION_BY_AGE[ageBand ?? '11-15'];
+/** Returns the shape-fit set for an age band (defaults to 11–15 if unset). */
+export function getFitSet(ageBand: AgeBand | null): FitSet {
+  return FIT_BY_AGE[ageBand ?? '11-15'];
 }
 
-/* ─── Third game (Hledání): age-adaptive visual search (odd-one-out) ───
-   Cíl: ťukni na pole, které se liší od ostatních.
-   Dvě páčky obtížnosti: velikost mřížky + nápadnost rozdílu.
-   4–6   → barva (vše červené, jedno modré), malá mřížka
-   7–10  → otočení šipky, střední mřížka
-   11–15 → jemný odstín, větší mřížka
-   15+   → velmi jemný odstín, hustá mřížka                          */
+/* ─── Third game (Hledání): emoji „najdi, co se sem nehodí" ───
+   Cíl: ťukni na emoji, které se liší od ostatních.
+   Obtížnost = velikost mřížky + podobnost emoji.
+   4–6   → zvířátka, hodně odlišné (🐶 vs 🐱), malá mřížka
+   7–10  → podobnější (🐱 vs 🐯), střední mřížka
+   11–15 → podobné smajlíky (🙂 vs 😊), větší mřížka
+   15+   → skoro stejné (😄 vs 😁), hustá mřížka                      */
 
 export const HLEDANI_BY_AGE: Record<AgeBand, HledaniSet> = {
   '4-6': {
-    mode: 'color',
-    rule: 'Najdi jinou barvu',
+    rule: 'Najdi, co se sem nehodí',
     items: [
-      { cols: 2, rows: 2, oddIndex: 2, base: { color: '#EF4444', rot: 0 }, odd: { color: '#2563EB', rot: 0 } },
-      { cols: 3, rows: 2, oddIndex: 4, base: { color: '#10B981', rot: 0 }, odd: { color: '#F59E0B', rot: 0 } },
-      { cols: 3, rows: 3, oddIndex: 6, base: { color: '#7C3AED', rot: 0 }, odd: { color: '#F97316', rot: 0 } },
+      { cols: 2, rows: 2, oddIndex: 2, base: '🐶', odd: '🐱' },
+      { cols: 3, rows: 2, oddIndex: 4, base: '🍎', odd: '🍌' },
+      { cols: 3, rows: 3, oddIndex: 6, base: '⭐', odd: '❤️' },
     ],
   },
   '7-10': {
-    mode: 'rotation',
-    rule: 'Najdi otočenou šipku',
+    rule: 'Najdi, co se sem nehodí',
     items: [
-      { cols: 3, rows: 3, oddIndex: 5,  base: { color: '#2563EB', rot: 0 }, odd: { color: '#2563EB', rot: 90 } },
-      { cols: 4, rows: 3, oddIndex: 7,  base: { color: '#F97316', rot: 0 }, odd: { color: '#F97316', rot: 180 } },
-      { cols: 4, rows: 4, oddIndex: 10, base: { color: '#10B981', rot: 0 }, odd: { color: '#10B981', rot: 90 } },
+      { cols: 3, rows: 3, oddIndex: 5,  base: '🐱', odd: '🐯' },
+      { cols: 4, rows: 3, oddIndex: 7,  base: '🚗', odd: '🚙' },
+      { cols: 4, rows: 4, oddIndex: 10, base: '🌳', odd: '🌲' },
     ],
   },
   '11-15': {
-    mode: 'color',
-    rule: 'Najdi jiný odstín',
+    rule: 'Najdi, co se sem nehodí',
     items: [
-      { cols: 4, rows: 4, oddIndex: 9,  base: { color: '#2563EB', rot: 0 }, odd: { color: '#5A86E8', rot: 0 } },
-      { cols: 5, rows: 4, oddIndex: 13, base: { color: '#7C3AED', rot: 0 }, odd: { color: '#9460EF', rot: 0 } },
-      { cols: 5, rows: 5, oddIndex: 18, base: { color: '#F97316', rot: 0 }, odd: { color: '#FB9445', rot: 0 } },
+      { cols: 4, rows: 4, oddIndex: 9,  base: '🙂', odd: '😊' },
+      { cols: 5, rows: 4, oddIndex: 13, base: '🐢', odd: '🦎' },
+      { cols: 5, rows: 5, oddIndex: 18, base: '🌝', odd: '🌚' },
     ],
   },
   '15+': {
-    mode: 'color',
-    rule: 'Najdi nepatrně jiný odstín',
+    rule: 'Najdi, co se sem nehodí',
     items: [
-      { cols: 5, rows: 5, oddIndex: 12, base: { color: '#10B981', rot: 0 }, odd: { color: '#1FC295', rot: 0 } },
-      { cols: 6, rows: 5, oddIndex: 21, base: { color: '#2563EB', rot: 0 }, odd: { color: '#3370EE', rot: 0 } },
-      { cols: 6, rows: 6, oddIndex: 29, base: { color: '#EF4444', rot: 0 }, odd: { color: '#F25555', rot: 0 } },
+      { cols: 5, rows: 5, oddIndex: 12, base: '😄', odd: '😁' },
+      { cols: 6, rows: 5, oddIndex: 21, base: '🟦', odd: '🟪' },
+      { cols: 6, rows: 6, oddIndex: 29, base: '😀', odd: '😄' },
     ],
   },
 };

@@ -57,25 +57,42 @@ export interface RotationSet {
   items: RotationItem[];
 }
 
-/* ─── Third game (Hledání — visual search / odd-one-out) ─── */
-
-export interface HledaniCell {
-  color: string;   // hex
-  rot: number;     // stupně (využito jen v rotation módu)
-}
+/* ─── Hledání — emoji „najdi, co se sem nehodí" ─── */
 
 export interface HledaniItem {
   cols: number;
   rows: number;
-  oddIndex: number;      // index pole, které se liší
-  base: HledaniCell;     // vzhled běžných polí
-  odd: HledaniCell;      // vzhled odlišného pole
+  oddIndex: number; // index pole, které se liší
+  base: string;     // emoji opakující se v mřížce
+  odd: string;      // emoji odlišného pole
 }
 
 export interface HledaniSet {
-  mode: 'color' | 'rotation'; // čím se odlišný prvek liší
   rule: string;
   items: HledaniItem[];
+}
+
+/* ─── Skládačka — „který dílek pasuje do díry" (prostorová) ─── */
+
+export type ShapeKey =
+  | 'circle' | 'square' | 'triangle' | 'diamond'
+  | 'pentagon' | 'hexagon' | 'heptagon' | 'octagon'
+  | 'star' | 'heart' | 'arrow' | 'cross';
+
+export interface FitOption {
+  shape: ShapeKey;
+  rot: number;
+}
+
+export interface FitItem {
+  hole: FitOption;        // tvar díry (silueta nahoře)
+  options: FitOption[];   // nabízené dílky
+  answer: number;         // index dílku, který pasuje (stejný tvar i natočení)
+}
+
+export interface FitSet {
+  rule: string;
+  items: FitItem[];
 }
 
 export interface GameConfig {

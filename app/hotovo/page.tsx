@@ -11,17 +11,17 @@ const AGE_ROWS: { band: string; sub: string; game: string; emoji: string }[] = [
 ];
 
 const AGE_ROWS_ROTACE: { band: string; sub: string; game: string; emoji: string }[] = [
-  { band: '4–6 let',   sub: 'Předškoláci',          game: 'Pravé úhly, jasně odlišné', emoji: '🌱' },
-  { band: '7–10 let',  sub: 'Mladší školáci',       game: 'Pravé úhly + zrcadla', emoji: '⚡' },
-  { band: '11–15 let', sub: 'Starší školáci',       game: 'Šikmé úhly po 45°', emoji: '🚀' },
-  { band: '15+ let',   sub: 'Teenageři a dospělí',  game: 'Nestandardní úhly (30/120/…)', emoji: '🔥' },
+  { band: '4–6 let',   sub: 'Předškoláci',          game: 'Základní tvary (kruh, hvězda…)', emoji: '🌱' },
+  { band: '7–10 let',  sub: 'Mladší školáci',       game: 'Víc tvarů, méně nápadné', emoji: '⚡' },
+  { band: '11–15 let', sub: 'Starší školáci',       game: 'Podobné mnohoúhelníky — počítej hrany', emoji: '🚀' },
+  { band: '15+ let',   sub: 'Teenageři a dospělí',  game: 'Otočené tvary — záleží na natočení', emoji: '🔥' },
 ];
 
 const AGE_ROWS_HLEDANI: { band: string; sub: string; game: string; emoji: string }[] = [
-  { band: '4–6 let',   sub: 'Předškoláci',          game: 'Malá mřížka · jiná barva', emoji: '🌱' },
-  { band: '7–10 let',  sub: 'Mladší školáci',       game: 'Otočená šipka', emoji: '⚡' },
-  { band: '11–15 let', sub: 'Starší školáci',       game: 'Větší mřížka · jemný odstín', emoji: '🚀' },
-  { band: '15+ let',   sub: 'Teenageři a dospělí',  game: 'Hustá mřížka · nepatrný odstín', emoji: '🔥' },
+  { band: '4–6 let',   sub: 'Předškoláci',          game: 'Zvířátka — 🐶 vs 🐱 (malá mřížka)', emoji: '🌱' },
+  { band: '7–10 let',  sub: 'Mladší školáci',       game: 'Podobnější — 🐱 vs 🐯', emoji: '⚡' },
+  { band: '11–15 let', sub: 'Starší školáci',       game: 'Podobné smajlíky — 🙂 vs 😊', emoji: '🚀' },
+  { band: '15+ let',   sub: 'Teenageři a dospělí',  game: 'Skoro stejné — 😄 vs 😁 (hustá mřížka)', emoji: '🔥' },
 ];
 
 const DONE: { title: string; body: string }[] = [
@@ -45,32 +45,31 @@ const DONE: { title: string; body: string }[] = [
       '(např. červená–modrá–červená–modrá–?) pokračuje. Žádné počítání, vše vizuálně a hravě.',
   },
   {
-    title: '4 · Druhá hra: Rotace 3D (prostorová)',
+    title: '4 · Druhá hra: Skládačka (prostorová)',
     body:
-      'Přidali jsme druhou hru navazující hned po Posloupnosti. Ukáže se jeden tvar a úkolem je najít mezi ' +
-      'čtyřmi možnostmi tu, která je stejný tvar — jen otočený, ne zrcadlově převrácený. Trénuje prostorovou ' +
-      'představivost (dimenze „Prostorová").',
+      'Ukáže se „díra" určitého tvaru a úkolem je vybrat ze čtyř dílků ten, který do ní přesně sedne ' +
+      '(stejný tvar i natočení). Intuitivní jako dětská vkládačka, trénuje prostorovou představivost ' +
+      '(dimenze „Prostorová").',
   },
   {
-    title: '5 · Rotace je taky adaptivní podle věku',
+    title: '5 · Skládačka je adaptivní podle věku',
     body:
-      'Stejně jako u první hry se náročnost mění s věkem: nejmenší (4–6) otáčejí tvar jen o pravé úhly a ' +
-      'možnosti jsou jasně odlišné; starší dostávají šikmé úhly po 45° a 15+ nestandardní natočení, kde je ' +
-      'rozlišení otočení od zrcadlení nejtěžší.',
+      'Náročnost roste s věkem: nejmenší (4–6) skládají úplně odlišné základní tvary (kruh, hvězda), ' +
+      'starší podobné mnohoúhelníky (počítají hrany) a 15+ řeší i natočení dílku (šipka), kde záleží na ' +
+      'správné orientaci.',
   },
   {
     title: '6 · Třetí hra: Hledání (vizuální)',
     body:
-      'Přidali jsme třetí hru — vizuální hledání „co se sem nehodí". V mřížce stejných prvků je jeden ' +
-      'odlišný a úkolem je ho najít a ťuknout na něj. Trénuje pozornost a vizuální vnímání (dimenze ' +
-      '„Vizuální").',
+      'Vizuální hledání „co se sem nehodí". V mřížce stejných emoji je jedno odlišné a úkolem je ho najít ' +
+      'a ťuknout na něj. Hravé a barevné, trénuje pozornost a vizuální vnímání (dimenze „Vizuální").',
   },
   {
     title: '7 · Hledání adaptivní + správné pořadí her',
     body:
-      'Náročnost roste s věkem dvěma páčkami — velikostí mřížky a nápadností rozdílu: 4–6 hledají jinou ' +
-      'barvu v malé mřížce, 7–10 otočenou šipku, 11–15 jemný odstín a 15+ nepatrný odstín v husté mřížce. ' +
-      'Hry teď jdou ve správném pořadí: Hledání → Posloupnost → Rotace 3D.',
+      'Náročnost roste s věkem dvěma páčkami — velikostí mřížky a podobností emoji: 4–6 rozliší 🐶 vs 🐱 ' +
+      'v malé mřížce, 15+ skoro stejné 😄 vs 😁 v husté mřížce. Hry jdou ve správném pořadí: ' +
+      'Hledání → Posloupnost → Skládačka.',
   },
 ];
 
@@ -208,7 +207,7 @@ export default function HotovoPage() {
           marginBottom: 10,
         }}
       >
-        Věkové rozložení · 2. hra (Rotace 3D)
+        Věkové rozložení · 2. hra (Skládačka)
       </h2>
       <div
         style={{

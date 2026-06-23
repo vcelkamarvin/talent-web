@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import GameLayout from '@/components/GameLayout';
 import { GAME_CYCLE, DIMENSION_COLORS, getHledaniSet } from '@/lib/core/games';
 import { useSession } from '@/lib/session/SessionContext';
-import type { HledaniCell } from '@/lib/core/types';
 
-const GAME_INDEX = 0; // Hledání is index 0 in the cycle (first in play order)
+const GAME_INDEX = 0; // Hledání — first in play order
 const GAME = GAME_CYCLE[GAME_INDEX];
 
 type CellState = 'default' | 'correct' | 'wrong' | 'reveal';
@@ -27,6 +26,7 @@ export default function HledaniPage() {
   const item = set.items[itemIndex];
   const cellCount = item.cols * item.rows;
   const gap = item.cols >= 5 ? 6 : 10;
+  const fontScale = item.cols >= 6 ? 22 : item.cols >= 5 ? 26 : item.cols >= 4 ? 30 : 38;
 
   const handleCell = useCallback((i: number) => {
     if (locked) return;
@@ -37,9 +37,7 @@ export default function HledaniPage() {
 
     setCellStates({ [i]: correct ? 'correct' : 'wrong' });
     if (!correct) {
-      setTimeout(() => {
-        setCellStates({ [i]: 'wrong', [item.oddIndex]: 'reveal' });
-      }, 300);
+      setTimeout(() => setCellStates({ [i]: 'wrong', [item.oddIndex]: 'reveal' }), 300);
     }
 
     recordAnswer({ gameId: GAME.id, itemIndex, answer: i, correct, reactionMs });
@@ -57,30 +55,7 @@ export default function HledaniPage() {
     }, 900);
   }, [locked, item, itemIndex, set.items.length, recordAnswer, router]);
 
-  function renderShape(cell: HledaniCell) {
-    if (set.mode === 'rotation') {
-      return (
-        <svg viewBox="0 0 100 100" width="78%" height="78%" aria-hidden="true">
-          <g transform={`rotate(${cell.rot} 50 50)`}>
-            <polygon points="50,20 78,74 22,74" fill={cell.color} />
-          </g>
-        </svg>
-      );
-    }
-    return (
-      <span
-        style={{
-          width: '74%',
-          height: '74%',
-          borderRadius: '50%',
-          background: cell.color,
-          display: 'block',
-        }}
-      />
-    );
-  }
-
-  function ringFor(state: CellState): string {
+  function ring(state: CellState): string {
     if (state === 'correct' || state === 'reveal') return '0 0 0 3px #10B981';
     if (state === 'wrong') return '0 0 0 3px #EF4444';
     return 'none';
@@ -107,8 +82,9 @@ export default function HledaniPage() {
             Co se sem nehodí? 🔍
           </p>
 
-          {/* Grid */}
+          {/* Emoji grid */}
           <div
+            key={itemIndex}
             style={{
               display: 'grid',
               gridTemplateColumns: `repeat(${item.cols}, 1fr)`,
@@ -122,14 +98,15 @@ export default function HledaniPage() {
           >
             {Array.from({ length: cellCount }).map((_, i) => {
               const isOdd = i === item.oddIndex;
-              const cell = isOdd ? item.odd : item.base;
+              const emoji = isOdd ? item.odd : item.base;
               const state = cellStates[i] ?? 'default';
+              const dimOthers = (state === 'reveal') && i !== item.oddIndex;
               return (
                 <button
                   key={i}
                   disabled={locked}
                   onClick={() => handleCell(i)}
-                  className={state === 'correct' || state === 'reveal' ? 'pulse-green' : state === 'wrong' ? 'shake-red' : ''}
+                  className={`pop-in ${state === 'correct' || state === 'reveal' ? 'pulse-green' : ''} ${state === 'wrong' ? 'shake-red' : ''}`}
                   style={{
                     aspectRatio: '1 / 1',
                     width: '100%',
@@ -139,14 +116,21 @@ export default function HledaniPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    fontSize: fontScale,
+                    lineHeight: 1,
                     cursor: locked ? 'default' : 'pointer',
-                    boxShadow: ringFor(state),
-                    transition: 'box-shadow 0.15s',
+                    boxShadow: ring(state),
+                    transition: 'box-shadow 0.15s, transform 0.12s, opacity 0.2s',
                     WebkitTapHighlightColor: 'transparent',
                     padding: 0,
+                    opacity: dimOthers ? 0.35 : 1,
+                    animationDelay: `${Math.min(i * 0.02, 0.4)}s`,
                   }}
+                  onPointerDown={e => { if (!locked) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.9)'; }}
+                  onPointerUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+                  onPointerLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
                 >
-                  {renderShape(cell)}
+                  <span style={{ pointerEvents: 'none' }}>{emoji}</span>
                 </button>
               );
             })}

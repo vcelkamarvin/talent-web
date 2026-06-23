@@ -141,42 +141,6 @@ export default function Orb({ size = 200 }: OrbProps) {
         />
       </div>
 
-      {/* Satellites — orbit slowly around the sphere */}
-      <div className="orb-orbit" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <Sat color="var(--d1)" posStyle={{ top: '4%', left: '50%', transform: 'translateX(-50%)' }} delay={0} />
-        <Sat color="var(--d3)" posStyle={{ top: '22%', right: '3%' }}  delay={0.55} />
-        <Sat color="var(--d4)" posStyle={{ bottom: '20%', right: '2%' }} delay={1.1} />
-        <Sat color="var(--d5)" posStyle={{ bottom: '2%', left: '54%' }} delay={1.65} />
-        <Sat color="var(--d6)" posStyle={{ bottom: '20%', left: '2%' }} delay={2.2} />
-        <Sat color="var(--d2)" posStyle={{ top: '22%', left: '3%' }}    delay={2.75} />
-      </div>
     </div>
-  );
-}
-
-function Sat({
-  color,
-  posStyle,
-  delay,
-}: {
-  color: string;
-  posStyle: React.CSSProperties;
-  delay: number;
-}) {
-  return (
-    <span
-      style={{
-        position: 'absolute',
-        width: 13,
-        height: 13,
-        borderRadius: '99px',
-        background: color,
-        border: '2.5px solid #fff',
-        boxShadow: `0 4px 10px -2px rgba(20,22,40,0.35), 0 0 0 3px ${color}30`,
-        animation: `sat-pulse 3.5s ease-in-out infinite`,
-        animationDelay: `${delay}s`,
-        ...posStyle,
-      }}
-    />
   );
 }

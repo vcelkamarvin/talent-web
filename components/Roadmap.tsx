@@ -7,13 +7,13 @@ import { useState } from 'react';
 const DONE_ITEMS = [
   'Design systém + tokeny (barvy, typo, spacing, komponenty)',
   'App shell — iOS phone frame, mesh gradient, responzivita',
-  'Interaktivní Orb — float, cursor tilt, satellite pulse, entrance animace',
+  'Prémiový Orb — float, cursor tilt, rotující lesk, pulzující kruhy',
   'Start screen (Orb, tagline, CTA)',
   'Přihlášení — e-mail + "Pokračovat jako host"',
   'Domovská obrazovka (Home)',
-  'Onboarding — věk (4–6 / 7–10 / 11–15) + pohlaví',
-  'Hra 1: Posloupnost — Logika, 3 položky, reaction time, animace',
-  'Výsledková obrazovka (stub s dimenzními bary)',
+  'Onboarding — věk (4–6 / 7–10 / 11–15 / 15+) + pohlaví, animovaný vstup',
+  'Hry 1–3: Hledání, Posloupnost, Skládačka — adaptivní dle věku, reaction time',
+  'Výsledková obrazovka — stav prototypu (radar přijde po všech hrách)',
   'Showcase rámeček + klientská roadmapa (tento seznam)',
   'Deploy na Vercel — živý link pro klienta',
 ];
@@ -24,20 +24,45 @@ interface GameItem {
   goal: string;        // co hráč dělá (cíl)
   measures: string;    // co to měří (dovednost / dimenze)
   distinction: string; // jak je odlišena „odlišnost" + jak roste obtížnost s věkem
+  variants?: { age: string; detail: string }[]; // co dostane každá věková kategorie
 }
 
 const GAMES_REMAINING: GameItem[] = [
   {
     label: 'Hledání', dim: 'Vizuální', color: '#F59E0B', built: true,
-    goal: 'V mřížce stejných prvků najít a ťuknout na ten jediný, který se liší.',
+    goal: 'V mřížce stejných emoji najít a ťuknout na to jediné, které se sem nehodí.',
     measures: 'Vizuální pozornost a rychlost rozlišení detailu.',
-    distinction: 'Jedno pole má jinou barvu / odstín / otočení. Obtížnost = velikost mřížky + jemnost rozdílu: 4–6 jiná barva v malé mřížce → 15+ nepatrný odstín v husté mřížce.',
+    distinction: 'Jedno emoji je jiné. Obtížnost = velikost mřížky + podobnost emoji: čím starší, tím podobnější emoji a hustší mřížka.',
+    variants: [
+      { age: '4–6', detail: 'Zvířátka, hodně odlišné — 🐶 vs 🐱 · mřížka 2×2–3×3' },
+      { age: '7–10', detail: 'Podobnější — 🐱 vs 🐯 · mřížka 3×3–4×4' },
+      { age: '11–15', detail: 'Podobné smajlíky — 🙂 vs 😊 · mřížka 4×4–5×5' },
+      { age: '15+', detail: 'Skoro stejné — 😄 vs 😁 · hustá 5×5–6×6' },
+    ],
   },
   {
-    label: 'Rotace 3D', dim: 'Prostorová', color: '#7C3AED', built: true,
-    goal: 'Najít tvar, který je stejný jako vzor — jen otočený, ne zrcadlově převrácený.',
-    measures: 'Prostorovou představivost (mentální rotace).',
-    distinction: 'Správná možnost je čistá rotace, rušivé jsou zrcadlené. Obtížnost = úhel: 4–6 pravé úhly → 15+ nestandardní natočení (30/120°).',
+    label: 'Posloupnost', dim: 'Logika', color: '#2563EB', built: true,
+    goal: 'Doplnit, co ve vzoru / řadě chybí.',
+    measures: 'Logické a numerické uvažování, rozpoznání vzoru.',
+    distinction: 'Nejmenší řeší barevné vzory bez čísel, starší číselné řady. Obtížnost roste s typem pravidla.',
+    variants: [
+      { age: '4–6', detail: 'Barevné vzory bez čísel — 🔴🔵🔴🔵 ?' },
+      { age: '7–10', detail: 'Lehké řady — +1, +2, +5' },
+      { age: '11–15', detail: 'Střední řady — ×2, ×2+1, Fibonacci' },
+      { age: '15+', detail: 'Těžké řady — mocniny, prvočísla, faktoriál' },
+    ],
+  },
+  {
+    label: 'Skládačka', dim: 'Prostorová', color: '#7C3AED', built: true,
+    goal: 'Vybrat dílek, který přesně sedne do díry (stejný tvar i natočení).',
+    measures: 'Prostorovou představivost a rozlišení tvarů.',
+    distinction: 'Jediný dílek pasuje. Obtížnost = podobnost tvarů a u nejstarších i natočení dílku.',
+    variants: [
+      { age: '4–6', detail: 'Základní tvary — kruh, čtverec, hvězda (hodně odlišné)' },
+      { age: '7–10', detail: 'Víc tvarů — pětiúhelník vs šestiúhelník' },
+      { age: '11–15', detail: 'Podobné mnohoúhelníky — počítej hrany' },
+      { age: '15+', detail: 'Otočené tvary — záleží na natočení (šipka)' },
+    ],
   },
   {
     label: 'Rovnováha', dim: 'Kinestetická', color: '#F97316', note: '⭐ gyroskop',
@@ -453,7 +478,13 @@ function Row({
 function GameRow({ g }: { g: GameItem }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ borderBottom: '1px solid #F4F5F8' }}>
+    <div
+      style={{
+        borderBottom: '1px solid #F4F5F8',
+        borderLeft: g.built ? '3px solid #10B981' : '3px solid transparent',
+        background: g.built ? '#F6FEFB' : 'transparent',
+      }}
+    >
       <button
         onClick={() => setOpen(o => !o)}
         style={{
@@ -503,6 +534,34 @@ function GameRow({ g }: { g: GameItem }) {
           <DescLine label="Cíl" color={g.color}>{g.goal}</DescLine>
           <DescLine label="Měří" color={g.color}>{g.measures}</DescLine>
           <DescLine label="Odlišnost" color={g.color}>{g.distinction}</DescLine>
+
+          {g.variants && (
+            <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontWeight: 700, color: g.color, fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Podle věku — co dostane každá kategorie
+              </span>
+              {g.variants.map(v => (
+                <div key={v.age} style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      minWidth: 46,
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      color: g.color,
+                      background: g.color + '14',
+                      padding: '1px 7px',
+                      borderRadius: 99,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {v.age}
+                  </span>
+                  <span style={{ fontSize: 12, lineHeight: 1.45, color: '#3A3E4D' }}>{v.detail}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
