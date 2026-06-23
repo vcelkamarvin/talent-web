@@ -1,7 +1,7 @@
-import type { GameConfig, SequenceSet, FitSet, HledaniSet, AgeBand } from './types';
+import type { GameConfig, SequenceSet, FitSet, HledaniSet, MemorySet, AgeBand } from './types';
 
 export const GAME_CYCLE: GameConfig[] = [
-  { id: 'hledani',     title: 'Hledání',     dimension: 'd5', label: 'Vizuální' },
+  { id: 'hledani',     title: 'Paměť',       dimension: 'd5', label: 'Vizuální' },
   { id: 'posloupnost', title: 'Posloupnost',  dimension: 'd1', label: 'Logika',
     items: [
       { seq: [2, 5, 11, null, 47], answer: 23, options: [21, 23, 25, 27], rule: '×2+1' },
@@ -190,4 +190,24 @@ export const HLEDANI_BY_AGE: Record<AgeBand, HledaniSet> = {
 /** Returns the visual-search set for an age band (defaults to 11–15 if unset). */
 export function getHledaniSet(ageBand: AgeBand | null): HledaniSet {
   return HLEDANI_BY_AGE[ageBand ?? '11-15'];
+}
+
+/* ─── First game (Paměť): sekvenční paměť (Simon) ───
+   Rozsvítí se sekvence polí, hráč ji zopakuje. Testuje pracovní paměť.
+   Obtížnost = délka sekvence + počet polí + rychlost blikání.
+   4–6   → 4 pole, krátké pomalé sekvence
+   7–10  → 4 pole, delší
+   11–15 → 6 polí, rychlejší
+   15+   → 6 polí, dlouhé a rychlé                                   */
+
+export const MEMORY_BY_AGE: Record<AgeBand, MemorySet> = {
+  '4-6':   { pads: 4, rounds: [2, 3, 3], flashMs: 720, gapMs: 320 },
+  '7-10':  { pads: 4, rounds: [3, 4, 4], flashMs: 620, gapMs: 270 },
+  '11-15': { pads: 6, rounds: [4, 5, 5], flashMs: 520, gapMs: 220 },
+  '15+':   { pads: 6, rounds: [5, 6, 7], flashMs: 440, gapMs: 180 },
+};
+
+/** Returns the memory set for an age band (defaults to 11–15 if unset). */
+export function getMemorySet(ageBand: AgeBand | null): MemorySet {
+  return MEMORY_BY_AGE[ageBand ?? '11-15'];
 }

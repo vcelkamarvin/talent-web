@@ -12,7 +12,7 @@ const DONE_ITEMS = [
   'Přihlášení — e-mail + "Pokračovat jako host"',
   'Domovská obrazovka (Home)',
   'Onboarding — věk (4–6 / 7–10 / 11–15 / 15+) + pohlaví, animovaný vstup',
-  'Hry 1–3: Hledání, Posloupnost, Skládačka — adaptivní dle věku, reaction time',
+  'Hry 1–3: Paměť, Posloupnost, Skládačka — adaptivní dle věku, herní efekty',
   'Výsledková obrazovka — stav prototypu (radar přijde po všech hrách)',
   'Showcase rámeček + klientská roadmapa (tento seznam)',
   'Deploy na Vercel — živý link pro klienta',
@@ -29,15 +29,15 @@ interface GameItem {
 
 const GAMES_REMAINING: GameItem[] = [
   {
-    label: 'Hledání', dim: 'Vizuální', color: '#F59E0B', built: true,
-    goal: 'V mřížce stejných emoji najít a ťuknout na to jediné, které se sem nehodí.',
-    measures: 'Vizuální pozornost a rychlost rozlišení detailu.',
-    distinction: 'Jedno emoji je jiné. Obtížnost = velikost mřížky + podobnost emoji: čím starší, tím podobnější emoji a hustší mřížka.',
+    label: 'Paměť', dim: 'Vizuální', color: '#F59E0B', built: true,
+    goal: 'Rozsvítí se sekvence barevných polí — zapamatuj si pořadí a zopakuj ho ťukáním (jako hra Simon).',
+    measures: 'Pracovní (krátkodobou) paměť a soustředění.',
+    distinction: 'Obtížnost = délka sekvence + počet polí + rychlost blikání. Každé kolo je delší.',
     variants: [
-      { age: '4–6', detail: 'Zvířátka, hodně odlišné — 🐶 vs 🐱 · mřížka 2×2–3×3' },
-      { age: '7–10', detail: 'Podobnější — 🐱 vs 🐯 · mřížka 3×3–4×4' },
-      { age: '11–15', detail: 'Podobné smajlíky — 🙂 vs 😊 · mřížka 4×4–5×5' },
-      { age: '15+', detail: 'Skoro stejné — 😄 vs 😁 · hustá 5×5–6×6' },
+      { age: '4–6', detail: '4 pole · krátké pomalé sekvence (2–3)' },
+      { age: '7–10', detail: '4 pole · delší sekvence (3–4)' },
+      { age: '11–15', detail: '6 polí · rychlejší (4–5)' },
+      { age: '15+', detail: '6 polí · dlouhé a rychlé (5–7)' },
     ],
   },
   {

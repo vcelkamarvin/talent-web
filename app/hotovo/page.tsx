@@ -18,10 +18,10 @@ const AGE_ROWS_ROTACE: { band: string; sub: string; game: string; emoji: string 
 ];
 
 const AGE_ROWS_HLEDANI: { band: string; sub: string; game: string; emoji: string }[] = [
-  { band: '4–6 let',   sub: 'Předškoláci',          game: 'Zvířátka — 🐶 vs 🐱 (malá mřížka)', emoji: '🌱' },
-  { band: '7–10 let',  sub: 'Mladší školáci',       game: 'Podobnější — 🐱 vs 🐯', emoji: '⚡' },
-  { band: '11–15 let', sub: 'Starší školáci',       game: 'Podobné smajlíky — 🙂 vs 😊', emoji: '🚀' },
-  { band: '15+ let',   sub: 'Teenageři a dospělí',  game: 'Skoro stejné — 😄 vs 😁 (hustá mřížka)', emoji: '🔥' },
+  { band: '4–6 let',   sub: 'Předškoláci',          game: '4 pole · krátké pomalé sekvence (2–3)', emoji: '🌱' },
+  { band: '7–10 let',  sub: 'Mladší školáci',       game: '4 pole · delší sekvence (3–4)', emoji: '⚡' },
+  { band: '11–15 let', sub: 'Starší školáci',       game: '6 polí · rychlejší (4–5)', emoji: '🚀' },
+  { band: '15+ let',   sub: 'Teenageři a dospělí',  game: '6 polí · dlouhé a rychlé (5–7)', emoji: '🔥' },
 ];
 
 const DONE: { title: string; body: string }[] = [
@@ -59,17 +59,17 @@ const DONE: { title: string; body: string }[] = [
       'správné orientaci.',
   },
   {
-    title: '6 · Třetí hra: Hledání (vizuální)',
+    title: '6 · Třetí hra: Paměť (Simon)',
     body:
-      'Vizuální hledání „co se sem nehodí". V mřížce stejných emoji je jedno odlišné a úkolem je ho najít ' +
-      'a ťuknout na něj. Hravé a barevné, trénuje pozornost a vizuální vnímání (dimenze „Vizuální").',
+      'Paměťová hra ve stylu Simona: rozsvítí se sekvence barevných polí a úkolem je zopakovat ji ve ' +
+      'správném pořadí. Trénuje pracovní paměť a soustředění — opravdová, návyková herní mechanika.',
   },
   {
-    title: '7 · Hledání adaptivní + správné pořadí her',
+    title: '7 · Paměť adaptivní + správné pořadí her',
     body:
-      'Náročnost roste s věkem dvěma páčkami — velikostí mřížky a podobností emoji: 4–6 rozliší 🐶 vs 🐱 ' +
-      'v malé mřížce, 15+ skoro stejné 😄 vs 😁 v husté mřížce. Hry jdou ve správném pořadí: ' +
-      'Hledání → Posloupnost → Skládačka.',
+      'Náročnost roste s věkem: 4–6 mají 4 pole a krátké pomalé sekvence (2–3), 15+ šest polí a dlouhé ' +
+      'rychlé sekvence (5–7). Každé kolo je delší. Hry jdou v pořadí: ' +
+      'Paměť → Posloupnost → Skládačka.',
   },
 ];
 
@@ -261,7 +261,7 @@ export default function HotovoPage() {
           marginBottom: 10,
         }}
       >
-        Věkové rozložení · 3. hra (Hledání)
+        Věkové rozložení · 3. hra (Paměť)
       </h2>
       <div
         style={{

@@ -72,6 +72,15 @@ export interface HledaniSet {
   items: HledaniItem[];
 }
 
+/* ─── Paměť — sekvenční paměťová hra (Simon) ─── */
+
+export interface MemorySet {
+  pads: number;       // počet polí (4 nebo 6)
+  rounds: number[];   // délky sekvencí v jednotlivých kolech
+  flashMs: number;    // jak dlouho svítí každé pole
+  gapMs: number;      // pauza mezi rozsvícením
+}
+
 /* ─── Skládačka — „který dílek pasuje do díry" (prostorová) ─── */
 
 export type ShapeKey =

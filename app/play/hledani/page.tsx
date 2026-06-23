@@ -1,69 +1,114 @@
 'use client';
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import GameLayout from '@/components/GameLayout';
 import { AmbientField, Burst } from '@/components/GameFX';
-import { GAME_CYCLE, DIMENSION_COLORS, getHledaniSet } from '@/lib/core/games';
+import { GAME_CYCLE, getMemorySet } from '@/lib/core/games';
 import { useSession } from '@/lib/session/SessionContext';
 
-const GAME_INDEX = 0; // Hledání — first in play order
+const GAME_INDEX = 0; // Paměť — first in play order
 const GAME = GAME_CYCLE[GAME_INDEX];
 
-type CellState = 'default' | 'correct' | 'wrong' | 'reveal';
+const PAD_COLORS = ['#2563EB', '#F97316', '#10B981', '#EC4899', '#7C3AED', '#F59E0B'];
 
-export default function HledaniPage() {
+type Phase = 'watch' | 'input' | 'done';
+
+export default function MemoryPage() {
   const { session, recordAnswer } = useSession();
   const router = useRouter();
+  const set = useMemo(() => getMemorySet(session.ageBand), [session.ageBand]);
 
-  const set = useMemo(() => getHledaniSet(session.ageBand), [session.ageBand]);
+  const [roundIndex, setRoundIndex] = useState(0);
+  const [sequence, setSequence] = useState<number[]>([]);
+  const [phase, setPhase] = useState<Phase>('watch');
+  const [activePad, setActivePad] = useState<number | null>(null);
+  const [inputIndex, setInputIndex] = useState(0);
+  const [wrongPad, setWrongPad] = useState<number | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const [itemIndex, setItemIndex] = useState(0);
-  const [cellStates, setCellStates] = useState<Record<number, CellState>>({});
-  const [locked, setLocked] = useState(false);
-  const [answered, setAnswered] = useState(false);
-  const startTimeRef = useRef<number>(Date.now());
+  const actionTimers = useRef<number[]>([]);
+  const inputStart = useRef<number>(0);
 
-  const dimColor = DIMENSION_COLORS[GAME.dimension];
-  const item = set.items[itemIndex];
-  const cellCount = item.cols * item.rows;
-  const gap = item.cols >= 5 ? 6 : 10;
-  const fontScale = item.cols >= 6 ? 22 : item.cols >= 5 ? 26 : item.cols >= 4 ? 30 : 38;
+  const cols = set.pads === 6 ? 3 : 2;
 
-  const handleCell = useCallback((i: number) => {
-    if (locked) return;
-    setLocked(true);
-    setAnswered(true);
+  const startRound = useCallback((idx: number) => {
+    const len = set.rounds[idx];
+    const seq = Array.from({ length: len }, () => Math.floor(Math.random() * set.pads));
+    setSequence(seq);
+    setInputIndex(0);
+    setWrongPad(null);
+    setSuccess(false);
+    setActivePad(null);
+    setPhase('watch');
+  }, [set]);
 
-    const reactionMs = Date.now() - startTimeRef.current;
-    const correct = i === item.oddIndex;
+  // Start the first round once the age (set) is known.
+  useEffect(() => {
+    setRoundIndex(0);
+    startRound(0);
+    const t = actionTimers.current;
+    return () => { t.forEach(clearTimeout); };
+  }, [startRound]);
 
-    setCellStates({ [i]: correct ? 'correct' : 'wrong' });
-    if (!correct) {
-      setTimeout(() => setCellStates({ [i]: 'wrong', [item.oddIndex]: 'reveal' }), 300);
-    }
+  // Play the "watch" sequence — flash each pad in order, then hand over to input.
+  useEffect(() => {
+    if (phase !== 'watch' || sequence.length === 0) return;
+    const local: number[] = [];
+    let i = 0;
+    const step = () => {
+      if (i >= sequence.length) {
+        local.push(window.setTimeout(() => { inputStart.current = Date.now(); setPhase('input'); }, 250));
+        return;
+      }
+      setActivePad(sequence[i]);
+      local.push(window.setTimeout(() => {
+        setActivePad(null);
+        i += 1;
+        local.push(window.setTimeout(step, set.gapMs));
+      }, set.flashMs));
+    };
+    local.push(window.setTimeout(step, 700));
+    return () => local.forEach(clearTimeout);
+  }, [phase, sequence, set.flashMs, set.gapMs]);
 
-    recordAnswer({ gameId: GAME.id, itemIndex, answer: i, correct, reactionMs });
-
-    setTimeout(() => {
-      const nextIndex = itemIndex + 1;
-      if (nextIndex >= set.items.length) {
+  const goNext = useCallback((correct: boolean) => {
+    recordAnswer({ gameId: GAME.id, itemIndex: roundIndex, answer: inputIndex, correct, reactionMs: Date.now() - inputStart.current });
+    const t = window.setTimeout(() => {
+      const next = roundIndex + 1;
+      if (next >= set.rounds.length) {
         router.push('/play');
       } else {
-        setItemIndex(nextIndex);
-        setCellStates({});
-        setLocked(false);
-        setAnswered(false);
-        startTimeRef.current = Date.now();
+        setRoundIndex(next);
+        startRound(next);
       }
-    }, 1000);
-  }, [locked, item, itemIndex, set.items.length, recordAnswer, router]);
+    }, correct ? 950 : 1150);
+    actionTimers.current.push(t);
+  }, [recordAnswer, roundIndex, inputIndex, set.rounds.length, router, startRound]);
 
-  function ring(state: CellState): string {
-    if (state === 'correct' || state === 'reveal') return '0 0 0 3px #10B981, 0 0 20px 1px rgba(16,185,129,0.5)';
-    if (state === 'wrong') return '0 0 0 3px #EF4444';
-    return 'none';
-  }
+  const tapPad = useCallback((p: number) => {
+    if (phase !== 'input') return;
+    setActivePad(p);
+    const t = window.setTimeout(() => setActivePad(a => (a === p ? null : a)), 230);
+    actionTimers.current.push(t);
+
+    if (p === sequence[inputIndex]) {
+      const ni = inputIndex + 1;
+      if (ni >= sequence.length) {
+        setPhase('done');
+        setSuccess(true);
+        goNext(true);
+      } else {
+        setInputIndex(ni);
+      }
+    } else {
+      setPhase('done');
+      setWrongPad(p);
+      goNext(false);
+    }
+  }, [phase, sequence, inputIndex, goNext]);
+
+  const padSize = set.pads === 6 ? 92 : 116;
 
   return (
     <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', padding: '52px 24px 36px', minHeight: '100dvh', overflow: 'hidden' }}>
@@ -73,102 +118,97 @@ export default function HledaniPage() {
           gameNumber={GAME_INDEX + 1}
           totalGames={GAME_CYCLE.length}
           categoryLabel={GAME.label}
-          categoryColor={dimColor}
+          categoryColor="#F59E0B"
         >
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18 }}>
-            <p
-              key={`q${itemIndex}`}
-              className="q-in"
-              style={{
-                fontFamily: "'Space Grotesk', system-ui, sans-serif",
-                fontWeight: 600,
-                fontSize: 17,
-                color: 'var(--ink-2)',
-                textAlign: 'center',
-              }}
-            >
-              Co se sem nehodí? 🔍
-            </p>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 22 }}>
+            {/* Phase banner */}
+            <div style={{ textAlign: 'center' }}>
+              <p
+                key={`${phase}-${roundIndex}`}
+                className="q-in"
+                style={{
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 22,
+                  color: 'var(--ink)',
+                }}
+              >
+                {phase === 'watch' ? 'Sleduj 👀' : success ? 'Správně! 🎉' : wrongPad !== null ? 'Skoro! 🙈' : 'Zopakuj 🖐️'}
+              </p>
+              <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>
+                Kolo {roundIndex + 1} / {set.rounds.length} · zapamatuj si pořadí
+              </p>
+            </div>
 
-            {/* Emoji grid */}
+            {/* Pad grid */}
             <div
-              key={itemIndex}
-              className="q-in"
               style={{
+                position: 'relative',
                 display: 'grid',
-                gridTemplateColumns: `repeat(${item.cols}, 1fr)`,
-                gap,
-                background: 'rgba(255,255,255,0.72)',
-                backdropFilter: 'blur(6px)',
-                border: '1px solid var(--line)',
-                borderRadius: 20,
-                padding: 14,
-                boxShadow: '0 6px 26px -10px rgba(12,14,22,0.22)',
+                gridTemplateColumns: `repeat(${cols}, ${padSize}px)`,
+                gap: 14,
+                padding: 6,
               }}
             >
-              {Array.from({ length: cellCount }).map((_, i) => {
-                const isOdd = i === item.oddIndex;
-                const emoji = isOdd ? item.odd : item.base;
-                const state = cellStates[i] ?? 'default';
-                const highlight = state === 'correct' || state === 'reveal';
-                const dimmed = answered && !highlight;
+              {Array.from({ length: set.pads }).map((_, i) => {
+                const color = PAD_COLORS[i];
+                const isActive = activePad === i;
+                const isWrong = wrongPad === i;
                 return (
                   <button
                     key={i}
-                    disabled={locked}
-                    onClick={() => handleCell(i)}
-                    className={`pop-in ${state === 'wrong' ? 'shake-red' : ''}`}
+                    onClick={() => tapPad(i)}
+                    disabled={phase !== 'input'}
+                    aria-label={`pole ${i + 1}`}
                     style={{
-                      position: 'relative',
-                      aspectRatio: '1 / 1',
-                      width: '100%',
-                      borderRadius: 12,
-                      border: '1px solid var(--line)',
-                      background: 'var(--bg)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: fontScale,
-                      lineHeight: 1,
-                      cursor: locked ? 'default' : 'pointer',
-                      boxShadow: ring(state),
-                      transition: 'box-shadow 0.18s, transform 0.15s, opacity 0.25s',
+                      width: padSize,
+                      height: padSize,
+                      borderRadius: 20,
+                      border: 'none',
+                      background: color,
+                      cursor: phase === 'input' ? 'pointer' : 'default',
+                      opacity: isActive ? 1 : 0.42,
+                      transform: isActive ? 'scale(1.07)' : 'scale(1)',
+                      boxShadow: isActive
+                        ? `0 0 30px 5px ${color}, 0 8px 22px -6px ${color}`
+                        : isWrong
+                          ? '0 0 0 3px #EF4444'
+                          : '0 4px 12px -6px rgba(12,14,22,0.3)',
+                      transition: 'transform 0.12s ease, opacity 0.15s ease, box-shadow 0.15s ease',
                       WebkitTapHighlightColor: 'transparent',
-                      padding: 0,
-                      opacity: dimmed ? 0.25 : 1,
-                      transform: dimmed ? 'scale(0.9)' : 'scale(1)',
-                      animationDelay: `${Math.min(i * 0.02, 0.4)}s`,
                     }}
-                    onPointerDown={e => { if (!locked) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.9)'; }}
-                    onPointerUp={e => { if (!answered) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-                    onPointerLeave={e => { if (!answered) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-                  >
-                    <span
-                      className={highlight ? 'pop-bounce' : 'wiggle'}
-                      style={{ pointerEvents: 'none', display: 'inline-block', animationDelay: highlight ? '0s' : `${(i % 5) * 0.22}s` }}
-                    >
-                      {emoji}
-                    </span>
-                    {highlight && <Burst n={14} />}
-                  </button>
+                    className={isWrong ? 'shake-red' : ''}
+                    onPointerDown={e => { if (phase === 'input') (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.94)'; }}
+                  />
                 );
               })}
+              {success && <Burst n={20} />}
             </div>
 
-            <p style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center' }}>
-              <span style={{ fontWeight: 600, color: dimColor }}>{set.rule}</span>
-            </p>
+            {/* Input progress dots */}
+            <div style={{ display: 'flex', gap: 6, minHeight: 8 }}>
+              {phase !== 'watch' && sequence.map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: i < inputIndex ? '#10B981' : 'var(--line-2)',
+                    transition: 'background 0.2s',
+                  }}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* Progress dots */}
+          {/* Round progress */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, paddingTop: 8 }}>
-            {set.items.map((_, i) => (
+            {set.rounds.map((_, i) => (
               <div
                 key={i}
                 style={{
                   width: 6, height: 6, borderRadius: '50%',
-                  background: dimColor,
-                  opacity: i <= itemIndex ? 1 : 0.4,
+                  background: '#F59E0B',
+                  opacity: i <= roundIndex ? 1 : 0.4,
                   transition: 'all 0.3s',
                 }}
               />
