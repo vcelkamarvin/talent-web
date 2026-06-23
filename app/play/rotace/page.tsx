@@ -3,14 +3,16 @@
 import { useState, useRef, useCallback, useMemo, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import GameLayout from '@/components/GameLayout';
+import { AmbientField, Burst } from '@/components/GameFX';
 import { GAME_CYCLE, DIMENSION_COLORS, getFitSet } from '@/lib/core/games';
 import { useSession } from '@/lib/session/SessionContext';
 import type { ShapeKey } from '@/lib/core/types';
 
-const GAME_INDEX = 2; // Prostorová — second game we built
+const GAME_INDEX = 2; // Prostorová
 const GAME = GAME_CYCLE[GAME_INDEX];
 
 type OptionState = 'default' | 'correct' | 'wrong';
+type StyleVars = CSSProperties & { [key: `--${string}`]: string | number };
 
 /** One SVG silhouette per shape key. `hole` = dashed cut-out, jinak plný barevný dílek. */
 function Shape({ shape, rot = 0, color, size = 72, hole = false }: { shape: ShapeKey; rot?: number; color: string; size?: number; hole?: boolean }) {
@@ -56,14 +58,17 @@ export default function SkladackaPage() {
   const [itemIndex, setItemIndex] = useState(0);
   const [optionStates, setOptionStates] = useState<Record<number, OptionState>>({});
   const [locked, setLocked] = useState(false);
+  const [answered, setAnswered] = useState(false);
   const startTimeRef = useRef<number>(Date.now());
 
   const dimColor = DIMENSION_COLORS[GAME.dimension];
   const item = set.items[itemIndex];
+  const solved = optionStates[item.answer] === 'correct';
 
   const handleOption = useCallback((i: number) => {
     if (locked) return;
     setLocked(true);
+    setAnswered(true);
 
     const reactionMs = Date.now() - startTimeRef.current;
     const correct = i === item.answer;
@@ -83,105 +88,122 @@ export default function SkladackaPage() {
         setItemIndex(nextIndex);
         setOptionStates({});
         setLocked(false);
+        setAnswered(false);
         startTimeRef.current = Date.now();
       }
-    }, 900);
+    }, 1000);
   }, [locked, item, itemIndex, set.items.length, recordAnswer, router]);
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '52px 24px 36px', minHeight: '100dvh' }}>
-      <GameLayout
-        gameNumber={GAME_INDEX + 1}
-        totalGames={GAME_CYCLE.length}
-        categoryLabel={GAME.label}
-        categoryColor={dimColor}
-      >
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-          {/* Board with the hole */}
-          <div
-            style={{
-              position: 'relative',
-              background: 'var(--surface)',
-              border: '1px solid var(--line)',
-              borderRadius: 24,
-              padding: '22px 28px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: '0 2px 16px -6px rgba(12,14,22,0.12)',
-            }}
-          >
-            <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-              Tato díra
-            </span>
-            <Shape shape={item.hole.shape} rot={item.hole.rot} color={dimColor} size={96} hole />
+    <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', padding: '52px 24px 36px', minHeight: '100dvh', overflow: 'hidden' }}>
+      <AmbientField />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <GameLayout
+          gameNumber={GAME_INDEX + 1}
+          totalGames={GAME_CYCLE.length}
+          categoryLabel={GAME.label}
+          categoryColor={dimColor}
+        >
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
+            {/* Board with the hole — glows + pulses */}
+            <div
+              key={`hole${itemIndex}`}
+              className={`q-in ${solved ? '' : 'glow-soft'}`}
+              style={{
+                position: 'relative',
+                background: 'rgba(255,255,255,0.8)',
+                backdropFilter: 'blur(6px)',
+                border: `1px solid ${solved ? '#10B981' : 'var(--line)'}`,
+                borderRadius: 24,
+                padding: '22px 28px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'border-color 0.25s',
+                '--glow': `${dimColor}55`,
+              } as StyleVars}
+            >
+              <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                {solved ? '✓ Pasuje!' : 'Tato díra'}
+              </span>
+              <div className={solved ? 'pop-bounce' : undefined}>
+                <Shape shape={item.hole.shape} rot={item.hole.rot} color={dimColor} size={96} hole={!solved} />
+              </div>
+              {solved && <Burst n={18} />}
+            </div>
+
+            <p
+              key={`q${itemIndex}`}
+              className="q-in"
+              style={{
+                fontFamily: "'Space Grotesk', system-ui, sans-serif",
+                fontWeight: 600,
+                fontSize: 16,
+                color: 'var(--ink-2)',
+                textAlign: 'center',
+              }}
+            >
+              Který dílek sem pasuje? 🧩
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', marginTop: -6 }}>
+              <span style={{ fontWeight: 600, color: dimColor }}>{set.rule}</span>
+            </p>
           </div>
 
-          <p
-            style={{
-              fontFamily: "'Space Grotesk', system-ui, sans-serif",
-              fontWeight: 600,
-              fontSize: 16,
-              color: 'var(--ink-2)',
-              textAlign: 'center',
-            }}
-          >
-            Který dílek sem pasuje? 🧩
-          </p>
-          <p style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', marginTop: -6 }}>
-            <span style={{ fontWeight: 600, color: dimColor }}>{set.rule}</span>
-          </p>
-        </div>
+          {/* Options 2×2 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, paddingBottom: 8 }}>
+            {item.options.map((opt, i) => {
+              const st = optionStates[i] ?? 'default';
+              const dimmed = answered && st === 'default';
+              return (
+                <button
+                  key={`${itemIndex}-${i}`}
+                  disabled={locked}
+                  onClick={() => handleOption(i)}
+                  className={`pop-in ${st === 'correct' ? 'pop-bounce' : ''} ${st === 'wrong' ? 'shake-red' : ''}`}
+                  style={{
+                    position: 'relative',
+                    height: 104,
+                    borderRadius: 16,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: locked ? 'default' : 'pointer',
+                    transition: 'border-color 0.15s, background 0.15s, transform 0.12s, opacity 0.25s',
+                    boxShadow: st === 'correct' ? '0 0 22px -2px rgba(16,185,129,0.5)' : '0 1px 0 rgba(12,14,22,0.04)',
+                    WebkitTapHighlightColor: 'transparent',
+                    animationDelay: `${i * 0.06}s`,
+                    opacity: dimmed ? 0.3 : 1,
+                    ...stateStyle[st],
+                  }}
+                  onPointerDown={e => { if (!locked) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.95)'; }}
+                  onPointerUp={e => { if (!answered) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+                  onPointerLeave={e => { if (!answered) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+                >
+                  <Shape shape={opt.shape} rot={opt.rot} color={dimColor} size={72} />
+                  {st === 'correct' && <Burst n={14} />}
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Options 2×2 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, paddingBottom: 8 }}>
-          {item.options.map((opt, i) => {
-            const st = optionStates[i] ?? 'default';
-            return (
-              <button
+          {/* Progress dots */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, paddingTop: 8 }}>
+            {set.items.map((_, i) => (
+              <div
                 key={i}
-                disabled={locked}
-                onClick={() => handleOption(i)}
-                className={`pop-in ${st === 'correct' ? 'pulse-green' : ''} ${st === 'wrong' ? 'shake-red' : ''}`}
                 style={{
-                  height: 104,
-                  borderRadius: 16,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: locked ? 'default' : 'pointer',
-                  transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
-                  boxShadow: '0 1px 0 rgba(12,14,22,0.04)',
-                  WebkitTapHighlightColor: 'transparent',
-                  animationDelay: `${i * 0.06}s`,
-                  ...stateStyle[st],
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: dimColor,
+                  opacity: i <= itemIndex ? 1 : 0.4,
+                  transition: 'all 0.3s',
                 }}
-                onPointerDown={e => { if (!locked) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.95)'; }}
-                onPointerUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-                onPointerLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-              >
-                <Shape shape={opt.shape} rot={opt.rot} color={dimColor} size={72} />
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Progress dots */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, paddingTop: 8 }}>
-          {set.items.map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: dimColor,
-                opacity: i <= itemIndex ? 1 : 0.4,
-                transition: 'all 0.3s',
-              }}
-            />
-          ))}
-        </div>
-      </GameLayout>
+              />
+            ))}
+          </div>
+        </GameLayout>
+      </div>
     </div>
   );
 }

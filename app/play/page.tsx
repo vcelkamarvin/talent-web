@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import GameLayout from '@/components/GameLayout';
 import OptionButton from '@/components/OptionButton';
+import { AmbientField } from '@/components/GameFX';
 import { GAME_CYCLE, DIMENSION_COLORS, getSequenceSet, SEQUENCE_COLORS } from '@/lib/core/games';
 import { useSession } from '@/lib/session/SessionContext';
 
@@ -90,7 +91,9 @@ export default function PlayPage() {
     );
 
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '52px 24px 36px', minHeight: '100dvh' }}>
+      <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', padding: '52px 24px 36px', minHeight: '100dvh', overflow: 'hidden' }}>
+        <AmbientField />
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1 }}>
         <GameLayout
           gameNumber={GAME_INDEX + 1}
           totalGames={GAME_CYCLE.length}
@@ -173,6 +176,7 @@ export default function PlayPage() {
             ))}
           </div>
         </GameLayout>
+        </div>
       </div>
     );
   }
@@ -215,7 +219,9 @@ export default function PlayPage() {
   }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '52px 24px 36px', minHeight: '100dvh' }}>
+    <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', padding: '52px 24px 36px', minHeight: '100dvh', overflow: 'hidden' }}>
+      <AmbientField />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1 }}>
       <GameLayout
         gameNumber={GAME_INDEX + 1}
         totalGames={GAME_CYCLE.length}
@@ -285,6 +291,7 @@ export default function PlayPage() {
           ))}
         </div>
       </GameLayout>
+      </div>
     </div>
   );
 }

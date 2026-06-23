@@ -181,8 +181,8 @@ export const HLEDANI_BY_AGE: Record<AgeBand, HledaniSet> = {
     rule: 'Najdi, co se sem nehodí',
     items: [
       { cols: 5, rows: 5, oddIndex: 12, base: '😄', odd: '😁' },
-      { cols: 6, rows: 5, oddIndex: 21, base: '🟦', odd: '🟪' },
-      { cols: 6, rows: 6, oddIndex: 29, base: '😀', odd: '😄' },
+      { cols: 6, rows: 5, oddIndex: 21, base: '🌝', odd: '🌚' },
+      { cols: 6, rows: 6, oddIndex: 29, base: '😺', odd: '😸' },
     ],
   },
 };
