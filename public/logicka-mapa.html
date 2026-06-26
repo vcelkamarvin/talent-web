@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>TALENT! — Prostorová: Logická mapa</title>
+<style>
+  :root{
+    --bg:#FBFBFD; --ink:#0C0E16; --line:#EBECF1; --muted:#6b7280;
+    --dim:#7C3AED; --dim-2:#A78BFA; --dim-deep:#4C1D95;
+    --gold:#F59E0B; --green:#10B981; --red:#EF4444;
+    --wall:#E2E1EC; --cell:#F4F3FA;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Inter,system-ui,sans-serif;
+    display:flex; justify-content:center; align-items:stretch;
+  }
+  .app{width:100%; max-width:440px; min-height:100dvh; display:flex; flex-direction:column; position:relative; overflow:hidden}
+  .screen{position:absolute; inset:0; display:flex; flex-direction:column; padding:26px 22px 22px; opacity:0; pointer-events:none; transition:opacity .35s ease; overflow-y:auto}
+  .screen.active{opacity:1; pointer-events:auto}
+  .app::before{content:"";position:absolute;inset:0;background:
+    radial-gradient(700px 700px at 15% 0%, rgba(124,58,237,.10), transparent 60%),
+    radial-gradient(700px 700px at 100% 100%, rgba(236,72,153,.07), transparent 60%);
+    pointer-events:none}
+  .tag{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;font-size:12px;font-weight:600;color:var(--dim);background:rgba(124,58,237,.10);padding:7px 12px;border-radius:999px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--dim)}
+  h1{font-size:30px;letter-spacing:-.03em;margin:18px 0 6px;line-height:1.1}
+  h2{font-size:21px;letter-spacing:-.02em;margin:0 0 4px}
+  p.lead{color:#3a3f4b;font-size:15px;line-height:1.5;margin:0 0 14px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin:10px 0}
+  .card h3{margin:0 0 8px;font-size:14px;letter-spacing:-.01em}
+  .card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+  .meas{display:flex;gap:10px}
+  .meas .card{flex:1;text-align:center}
+  .meas .big{font-size:22px;font-weight:700;color:var(--dim)}
+  .meas small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+  .btn{appearance:none;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:16px;
+    background:var(--dim);color:#fff;border-radius:16px;padding:16px;width:100%;letter-spacing:-.01em;
+    box-shadow:0 8px 22px rgba(124,58,237,.28);transition:transform .12s ease, box-shadow .12s ease}
+  .btn:active{transform:translateY(1px) scale(.99);box-shadow:0 4px 12px rgba(124,58,237,.22)}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  .spacer{flex:1}
+  .hud{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+  .level-label{font-size:13px;color:var(--muted)}
+  .level-label b{color:var(--ink)}
+  .age-pill{font-size:11px;font-weight:600;color:var(--dim);background:rgba(124,58,237,.10);padding:5px 10px;border-radius:999px}
+  .stats{display:flex;gap:8px;margin:10px 0 6px}
+  .stat{flex:1;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px;text-align:center}
+  .stat .v{font-size:18px;font-weight:700;letter-spacing:-.02em}
+  .stat .l{font-size:10px;color:var(--muted);margin-top:1px}
+  .goalrow{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin:2px 0 10px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-weight:600;color:var(--ink)}
+  .chip.done{opacity:.4;text-decoration:line-through}
+  .ministar{width:14px;height:14px;border-radius:50%;background:var(--gold);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:800}
+  .board-wrap{display:flex;justify-content:center}
+  .board{display:grid;gap:5px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px;width:100%;touch-action:none;user-select:none;position:relative}
+  .c{border-radius:10px;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;background:var(--cell);transition:background .15s}
+  .c.wall{background:var(--wall)}
+  .c.start::after{content:"";width:34%;height:34%;border-radius:50%;background:rgba(124,58,237,.25)}
+  .c.goal{background:rgba(124,58,237,.10)}
+  .c.goal .flag{width:62%;height:62%;border-radius:12px;border:2px dashed var(--dim);display:flex;align-items:center;justify-content:center}
+  .c.goal.open .flag{background:var(--dim);border-style:solid}
+  .c.goal .flag svg{width:60%;height:60%}
+  .star{width:64%;height:64%;border-radius:50%;background:radial-gradient(circle at 35% 30%, #FCD34D, var(--gold));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;box-shadow:0 3px 8px rgba(245,158,11,.4)}
+  .star.taken{opacity:0;transform:scale(.4);transition:.25s}
+  .star.next{outline:3px solid rgba(245,158,11,.35);outline-offset:2px}
+  .avatar{position:absolute;width:74%;height:74%;border-radius:30%;
+    background:radial-gradient(circle at 32% 28%, var(--dim-2), var(--dim) 60%, var(--dim-deep));
+    box-shadow:0 4px 12px rgba(76,29,149,.45), inset 0 2px 4px rgba(255,255,255,.4);
+    z-index:5;transition:left .15s cubic-bezier(.3,1.3,.5,1), top .15s cubic-bezier(.3,1.3,.5,1)}
+  .avatar .eye{position:absolute;top:34%;width:13%;height:18%;border-radius:50%;background:#fff}
+  .avatar .eye.l{left:28%}.avatar .eye.r{right:28%}
+  .avatar .pup{position:absolute;width:7%;height:9%;border-radius:50%;background:#241047;top:40%}
+  .avatar .pup.l{left:32%}.avatar .pup.r{right:32%}
+  .trail{position:absolute;width:22%;height:22%;border-radius:50%;background:rgba(124,58,237,.16);z-index:1}
+  .controls{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .dpad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:6px}
+  .dbtn{background:#fff;border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .1s, background .1s}
+  .dbtn:active{transform:scale(.93);background:#f3f0fb}
+  .dbtn svg{width:24px;height:24px;stroke:var(--dim);stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dbtn.empty{visibility:hidden}
+  .side{display:flex;flex-direction:column;gap:8px;flex:1}
+  .mini{font-size:13px;font-weight:600;padding:11px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  .mini:active{background:#f6f6f9}
+  .overlay{position:absolute;inset:0;background:rgba(251,251,253,.72);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:.3s;z-index:20}
+  .overlay.show{opacity:1;pointer-events:auto}
+  .result{background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(12,14,22,.12)}
+  .stars3{display:flex;justify-content:center;gap:8px;margin:6px 0 14px}
+  .stars3 svg{width:38px;height:38px}
+  .rstats{display:flex;gap:10px;margin:14px 0}
+  .rstats .stat{background:var(--bg)}
+  .verdict{font-size:13px;color:var(--muted);margin:6px 0 16px;line-height:1.5}
+  .profile{display:flex;flex-direction:column;gap:10px;margin:14px 0}
+  .bar{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .bar .top{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:8px}
+  .bar .track{height:9px;background:var(--line);border-radius:999px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--dim-2),var(--dim))}
+  .foot{font-size:11px;color:var(--muted);text-align:center;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <section class="screen active" id="intro">
+    <span class="tag"><span class="dot"></span> Prostorová · Logická mapa</span>
+    <h1>Najdi cestu<br/>plánem v hlavě</h1>
+    <p class="lead">Vidíš celou mapu. Dojdi do cíle a posbírej hvězdy — u těžších úrovní ve správném pořadí. Nejde o rychlost prstů, ale o to <b>rozmyslet si trasu dopředu</b>.</p>
+    <div class="meas">
+      <div class="card"><div class="big">🧭</div><small>Prostorová<br/>orientace</small></div>
+      <div class="card"><div class="big">🗺️</div><small>Plánování<br/>trasy</small></div>
+      <div class="card"><div class="big">🎯</div><small>Efektivita<br/>vs. optimum</small></div>
+    </div>
+    <div class="card">
+      <h3>Jak se to měří</h3>
+      <p>Každá mapa má <b>jedno optimální řešení</b>. Měříme, jak blízko jsi mu byl(a), jak dlouho sis trasu rozmýšlel(a) před prvním tahem a kolik zbytečných kroků jsi udělal(a).</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="startGame()">Začít test</button>
+    <div class="foot">6 úrovní · 3 věková pásma (4–6, 7–9, 10–12)</div>
+  </section>
+  <section class="screen" id="game">
+    <div class="hud">
+      <div class="level-label">Úroveň <b id="lvlNum">1</b><span id="lvlOf"> / 6</span></div>
+      <span class="age-pill" id="ageBand">Věk 4–6</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="v" id="sMoves">0</div><div class="l">tahů</div></div>
+      <div class="stat"><div class="v" id="sTime">0,0 s</div><div class="l">čas</div></div>
+      <div class="stat"><div class="v" id="sStars">0/0</div><div class="l">hvězdy</div></div>
+    </div>
+    <div class="goalrow" id="goalRow"></div>
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+    <div class="controls">
+      <div class="dpad">
+        <div class="dbtn empty"></div>
+        <div class="dbtn" data-dir="up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></div>
+        <div class="dbtn empty"></div>
+        <div class="dbtn" data-dir="left"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></div>
+        <div class="dbtn empty"></div>
+        <div class="dbtn" data-dir="right"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="dbtn empty"></div>
+        <div class="dbtn" data-dir="down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="dbtn empty"></div>
+      </div>
+      <div class="side">
+        <button class="mini" onclick="resetLevel()">↺ Začít znovu</button>
+        <button class="mini" onclick="skipLevel()">Přeskočit →</button>
+      </div>
+    </div>
+  </section>
+  <section class="screen" id="results">
+    <span class="tag"><span class="dot"></span> Výsledek · Prostorová</span>
+    <h1 id="finalScore">Prostorové<br/>skóre</h1>
+    <p class="lead" id="finalBlurb"></p>
+    <div class="profile" id="profile"></div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="restartAll()">Hrát znovu</button>
+    <button class="btn ghost" style="margin-top:10px" onclick="show('intro')">Zpět na úvod</button>
+  </section>
+  <div class="overlay" id="overlay">
+    <div class="result">
+      <div class="stars3" id="ovStars"></div>
+      <h2 id="ovTitle">Hotovo!</h2>
+      <div class="verdict" id="ovVerdict"></div>
+      <div class="rstats">
+        <div class="stat"><div class="v" id="ovMoves">0</div><div class="l">tvých tahů</div></div>
+        <div class="stat"><div class="v" id="ovOpt">0</div><div class="l">optimum</div></div>
+        <div class="stat"><div class="v" id="ovPlan">0 s</div><div class="l">rozmýšlení</div></div>
+      </div>
+      <button class="btn" id="ovNext" onclick="nextLevel()">Další úroveň</button>
+    </div>
+  </div>
+</div>
+<script>
+const LEVELS = [
+  { band:"Věk 4–6", ordered:false, grid:["S..*",".##.",".##.","...G"]},
+  { band:"Věk 4–6", ordered:false, grid:["S.*..",".#.#.","...#.",".#.#.",".#*.G"]},
+  { band:"Věk 7–9", ordered:false, grid:["S....*",".####.",".#..#.",".#.#..",".#.#.*","*...#G"]},
+  { band:"Věk 7–9", ordered:true, grid:["S....1",".####.","..#...",".#.##.",".#...2",".#.#.G"]},
+  { band:"Věk 10–12", ordered:true, grid:["S.....1",".#####.",".......",".#####.",".......","######.","2.....G"]},
+  { band:"Věk 10–12", ordered:true, grid:["S......1",".######.","........",".######.","........",".######.","3......2","#######G"]},
+];
+let li=0, R=0, C=0, cells=[], pos={r:0,c:0}, startPos={r:0,c:0}, goal={r:0,c:0};
+let stars=[], ordered=false, moves=0, t0=0, firstMove=0, timer=null, visited={};
+let results=[];
+const $=id=>document.getElementById(id);
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+function bfs(a,b){
+  const q=[[a.r,a.c,0]], seen=new Set([a.r+","+a.c]);
+  while(q.length){
+    const [r,c,d]=q.shift();
+    if(r===b.r&&c===b.c) return d;
+    for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nr=r+dr,nc=c+dc,k=nr+","+nc;
+      if(nr<0||nc<0||nr>=R||nc>=C)continue;
+      if(cells[nr][nc].type==='wall')continue;
+      if(seen.has(k))continue;
+      seen.add(k); q.push([nr,nc,d+1]);
+    }
+  }
+  return Infinity;
+}
+function permute(arr){
+  if(arr.length<=1) return [arr];
+  const out=[];
+  arr.forEach((v,i)=>{const rest=arr.slice(0,i).concat(arr.slice(i+1));permute(rest).forEach(p=>out.push([v,...p]));});
+  return out;
+}
+function optimalMoves(){
+  const pts=stars.map(s=>({r:s.r,c:s.c}));
+  if(ordered){
+    let sum=0,cur=startPos;
+    for(const p of pts){sum+=bfs(cur,p);cur=p;}
+    sum+=bfs(cur,goal); return sum;
+  }
+  let best=Infinity;
+  for(const order of permute(pts)){
+    let sum=0,cur=startPos;
+    for(const p of order){sum+=bfs(cur,p);cur=p;}
+    sum+=bfs(cur,goal);
+    best=Math.min(best,sum);
+  }
+  return best;
+}
+let curOptimal=0;
+function loadLevel(i){
+  const L=LEVELS[i]; ordered=L.ordered;
+  R=L.grid.length; C=L.grid[0].length;
+  cells=[]; stars=[];
+  for(let r=0;r<R;r++){
+    const row=[];
+    for(let c=0;c<C;c++){
+      const ch=L.grid[r][c];
+      let type='path';
+      if(ch==='#')type='wall';
+      else if(ch==='S'){type='start';startPos={r,c};pos={r,c};}
+      else if(ch==='G'){type='goal';goal={r,c};}
+      else if(ch==='*'){type='path';stars.push({r,c,order:0,taken:false});}
+      else if(ch>='1'&&ch<='9'){type='path';stars.push({r,c,order:+ch,taken:false});}
+      row.push({type});
+    }
+    cells.push(row);
+  }
+  stars.sort((a,b)=>a.order-b.order);
+  moves=0; firstMove=0; t0=performance.now(); visited={}; visited[pos.r+","+pos.c]=1;
+  curOptimal=optimalMoves();
+  $('lvlNum').textContent=i+1; $('ageBand').textContent=L.band;
+  renderBoard(); updateHUD(); renderGoalRow();
+  clearInterval(timer); timer=setInterval(updateHUD,100);
+}
+function renderBoard(){
+  const b=$('board');
+  b.style.gridTemplateColumns=`repeat(${C},1fr)`;
+  b.innerHTML='';
+  for(let r=0;r<R;r++)for(let c=0;c<C;c++){
+    const cell=cells[r][c];
+    const d=document.createElement('div'); d.className='c '+(cell.type==='wall'?'wall':'');
+    if(cell.type==='start')d.classList.add('start');
+    if(cell.type==='goal'){d.classList.add('goal');
+      d.innerHTML='<div class="flag"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4l8 3-3 4 3 4-8-1"/></svg></div>';}
+    const st=stars.find(s=>s.r===r&&s.c===c);
+    if(st){const sd=document.createElement('div');sd.className='star';sd.dataset.key=r+","+c;
+      sd.textContent=ordered?st.order:'';d.appendChild(sd);}
+    d.dataset.r=r;d.dataset.c=c;
+    b.appendChild(d);
+  }
+  const av=document.createElement('div'); av.className='avatar'; av.id='avatar';
+  av.innerHTML='<div class="eye l"></div><div class="eye r"></div><div class="pup l"></div><div class="pup r"></div>';
+  b.appendChild(av);
+  placeAvatar(false);
+  markNextStar();
+}
+function placeAvatar(animate){
+  const av=$('avatar');
+  const cellEl=document.querySelector(`.c[data-r="${pos.r}"][data-c="${pos.c}"]`);
+  if(!cellEl)return;
+  const w=cellEl.offsetWidth;
+  if(!animate) av.style.transition='none';
+  av.style.width=(w*0.74)+'px'; av.style.height=(w*0.74)+'px';
+  av.style.left=(cellEl.offsetLeft + w*0.13)+'px';
+  av.style.top=(cellEl.offsetTop + w*0.13)+'px';
+  if(!animate){ void av.offsetWidth; av.style.transition=''; }
+}
+function markNextStar(){
+  document.querySelectorAll('.star').forEach(s=>s.classList.remove('next'));
+  if(ordered){const n=stars.find(s=>!s.taken);if(n){const e=document.querySelector(`.star[data-key="${n.r},${n.c}"]`);if(e)e.classList.add('next');}}
+  const allTaken=stars.every(s=>s.taken);
+  const g=document.querySelector('.c.goal'); if(g)g.classList.toggle('open',allTaken);
+}
+function renderGoalRow(){
+  const gr=$('goalRow'); gr.innerHTML='';
+  const label=document.createElement('span'); label.textContent=ordered?'Posbírej v pořadí:':'Posbírej hvězdy:'; gr.appendChild(label);
+  stars.forEach(s=>{const ch=document.createElement('span');ch.className='chip'+(s.taken?' done':'');ch.dataset.k=s.r+","+s.c;
+    ch.innerHTML=`<span class="ministar">${ordered?s.order:'★'}</span>`;gr.appendChild(ch);});
+  const gch=document.createElement('span'); gch.className='chip'; gch.id='goalChip';
+  gch.innerHTML='<span class="ministar" style="background:var(--dim)">⚑</span> cíl'; gr.appendChild(gch);
+}
+function move(dir){
+  const D={up:[-1,0],down:[1,0],left:[0,-1],right:[0,1]}[dir];
+  const nr=pos.r+D[0], nc=pos.c+D[1];
+  if(nr<0||nc<0||nr>=R||nc>=C)return;
+  if(cells[nr][nc].type==='wall')return;
+  if(!firstMove){firstMove=performance.now();}
+  pos={r:nr,c:nc}; moves++;
+  addTrail(nr,nc);
+  placeAvatar(true);
+  const st=stars.find(s=>s.r===nr&&s.c===nc&&!s.taken);
+  if(st){
+    if(!ordered || st===stars.find(s=>!s.taken)){
+      st.taken=true;
+      const e=document.querySelector(`.star[data-key="${nr},${nc}"]`); if(e)e.classList.add('taken');
+      const ch=document.querySelector(`.chip[data-k="${nr},${nc}"]`); if(ch)ch.classList.add('done');
+      pop(); markNextStar();
+    }
+  }
+  if(nr===goal.r&&nc===goal.c && stars.every(s=>s.taken)){ finishLevel(); }
+  updateHUD();
+}
+function addTrail(r,c){
+  if(visited[r+","+c])return; visited[r+","+c]=1;
+  const cellEl=document.querySelector(`.c[data-r="${r}"][data-c="${c}"]`); if(!cellEl)return;
+  const t=document.createElement('div'); t.className='trail'; cellEl.appendChild(t);
+}
+function pop(){const av=$('avatar');av.animate([{transform:'scale(1)'},{transform:'scale(1.25)'},{transform:'scale(1)'}],{duration:260,easing:'ease-out'});}
+function updateHUD(){
+  $('sMoves').textContent=moves;
+  const t=(performance.now()-t0)/1000;
+  $('sTime').textContent=t.toFixed(1).replace('.',',')+' s';
+  $('sStars').textContent=stars.filter(s=>s.taken).length+'/'+stars.length;
+}
+function finishLevel(){
+  clearInterval(timer);
+  const planMs=(firstMove? firstMove-t0 : 0);
+  const eff=Math.min(1, curOptimal/Math.max(moves,1));
+  let starsEarned = eff>=0.92?3 : eff>=0.7?2 : 1;
+  results[li]={moves,optimal:curOptimal,eff,stars:starsEarned,plan:planMs,solved:true};
+  showOverlay(starsEarned,eff,planMs);
+}
+function showOverlay(se,eff,planMs){
+  const ov=$('overlay'); ov.classList.add('show');
+  $('ovStars').innerHTML=[1,2,3].map(i=>starSVG(i<=se)).join('');
+  $('ovMoves').textContent=moves; $('ovOpt').textContent=curOptimal;
+  $('ovPlan').textContent=(planMs/1000).toFixed(1).replace('.',',')+' s';
+  let v;
+  if(se===3)v='Perfektní trasa — šel(šla) jsi téměř optimálně. Silné prostorové plánování.';
+  else if(se===2)v='Dobrá trasa s pár kroky navíc. Plánuješ dopředu, ještě je kam růst.';
+  else v='Cíl splněn metodou pokus-omyl. Zkus si příště rozmyslet celou cestu předem.';
+  $('ovVerdict').textContent=v;
+  $('ovNext').textContent = li>=LEVELS.length-1 ? 'Zobrazit výsledek' : 'Další úroveň';
+}
+function starSVG(on){return `<svg viewBox="0 0 24 24" fill="${on?'#F59E0B':'#E5E7EB'}"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 18.6 5.9 21.5l1.4-6.8L2.2 9l6.9-.7z"/></svg>`;}
+function nextLevel(){
+  $('overlay').classList.remove('show');
+  if(li>=LEVELS.length-1){ showResults(); return; }
+  li++; loadLevel(li);
+}
+function skipLevel(){
+  clearInterval(timer);
+  if(!results[li]) results[li]={moves:0,optimal:curOptimal,eff:0,stars:0,plan:0,solved:false};
+  if(li>=LEVELS.length-1){ showResults(); return; }
+  li++; loadLevel(li);
+}
+function resetLevel(){ loadLevel(li); }
+function showResults(){
+  clearInterval(timer);
+  const done=results.filter(r=>r&&r.solved);
+  const totalStars=results.reduce((a,r)=>a+(r?r.stars:0),0);
+  const maxStars=LEVELS.length*3;
+  const avgEff=done.length? done.reduce((a,r)=>a+r.eff,0)/done.length : 0;
+  const avgPlan=done.length? done.reduce((a,r)=>a+r.plan,0)/done.length/1000 : 0;
+  const pct=Math.round(totalStars/maxStars*100);
+  $('finalScore').innerHTML=`Prostorové<br/>skóre ${pct}%`;
+  $('finalBlurb').textContent=`Vyřešeno ${done.length}/${LEVELS.length} map · ${totalStars}/${maxStars} hvězd. `+
+    (pct>=80?'Výborná prostorová orientace a plánování.':pct>=55?'Solidní prostorové uvažování s prostorem ke zlepšení.':'Prostorové plánování zatím spíš pokus-omyl — trénovatelné.');
+  const eo=Math.round(avgEff*100);
+  const planScore=Math.max(0,Math.min(100,Math.round(avgPlan/3*100)));
+  $('profile').innerHTML=
+    bar('Efektivita trasy (vs. optimum)',eo)+
+    bar('Plánování před tahem',planScore, `${avgPlan.toFixed(1).replace('.',',')} s průměr`)+
+    bar('Dokončené mapy',Math.round(done.length/LEVELS.length*100));
+  show('results');
+}
+function bar(label,pct,note){
+  return `<div class="bar"><div class="top"><span>${label}</span><span>${note||pct+'%'}</span></div>
+    <div class="track"><div class="fill" style="width:${pct}%"></div></div></div>`;
+}
+function startGame(){ results=[]; li=0; show('game'); loadLevel(0); }
+function restartAll(){ startGame(); }
+document.querySelectorAll('.dbtn[data-dir]').forEach(b=>{
+  b.addEventListener('click',()=>move(b.dataset.dir));
+});
+document.addEventListener('keydown',e=>{
+  const m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right'};
+  if(m[e.key]){e.preventDefault();move(m[e.key]);}
+});
+let sx=0,sy=0,sw=false;
+const board=$('board');
+board.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;sw=true;},{passive:true});
+board.addEventListener('touchend',e=>{
+  if(!sw)return;sw=false;
+  const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;
+  if(Math.abs(dx)>Math.abs(dy))move(dx>0?'right':'left');else move(dy>0?'down':'up');
+});
+window.addEventListener('resize',()=>{ if($('game').classList.contains('active')) placeAvatar(false); });
+</script>
+</body>
+</html>
